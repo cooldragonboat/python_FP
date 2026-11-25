@@ -1,28 +1,44 @@
-# python_FP
+# MoodTrack（python_FP）
 
-程式設計 Python 課程期末專案（Final Project）。
+程式設計 Python 課程期末專案：用 Flask + SQLite 做的心情紀錄網站。
+
+## 目前進度（第一階段：最小可執行版本）
+
+- [x] Flask 網站可以啟動
+- [x] 首頁可以顯示，能選擇心情、寫一句話並記錄
+- [x] SQLite 資料庫自動建立（`instance/moodtrack.db`）
+- [x] 專案提交到 GitHub
 
 ## 環境需求
 
 - Python 3.10 以上
 
-## 快速開始
+## 快速開始（PowerShell）
 
 ```powershell
-git clone https://github.com/cooldragonboat/python_FP.git
-cd python_FP
 python -m venv venv
 .\venv\Scripts\Activate.ps1
-python main.py
+pip install -r requirements.txt
+python app.py
 ```
+
+打開瀏覽器到 <http://127.0.0.1:5000> 就能看到首頁。
+
+> 啟用虛擬環境遇到執行原則錯誤，先執行
+> `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` 再重新啟用。
 
 ## 專案結構
 
 ```
 python_FP/
-├── .gitignore   # 忽略 venv、__pycache__、.env、資料庫檔等
-├── README.md
-└── main.py      # 程式進入點
+├── app.py             # Flask 主程式：路由、資料表、啟動點
+├── requirements.txt   # 套件清單（pip install -r 安裝）
+├── templates/
+│   └── index.html     # 首頁
+├── static/
+│   └── style.css      # 樣式
+├── instance/          # 執行後自動產生，放 SQLite 資料庫（不提交）
+└── venv/              # 虛擬環境（不提交）
 ```
 
 ## Git 使用方式
