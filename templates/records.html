@@ -3,8 +3,8 @@
 {% block content %}
 <h1 class="page-title">歷史情緒紀錄</h1>
 <p class="welcome">
-  {% if filtering %}符合條件的紀錄 {{ records|length }} 筆（全部 {{ total }} 筆），依日期由新到舊排列。
-  {% else %}{{ current_user.username }} 的所有紀錄{% if records %}，共 {{ records|length }} 筆，依日期由新到舊排列{% endif %}。{% endif %}
+  {% if filtering %}符合條件的紀錄 {{ page.total }} 筆（全部 {{ total }} 筆），依日期由新到舊排列。
+  {% else %}{{ current_user.username }} 的所有紀錄{% if page.total %}，共 {{ page.total }} 筆，依日期由新到舊排列{% endif %}。{% endif %}
 </p>
 
 <form class="card filters" method="get" action="{{ url_for('records') }}">
@@ -66,10 +66,10 @@
               <td class="nowrap">{{ record.exercise_minutes }} 分鐘</td>
               <td class="note-cell">{{ record.note or "沒有備註" }}</td>
               <td class="nowrap"><div class="actions">
-                <a href="{{ url_for('edit_record', record_id=record.id, next=url_for('records')) }}">編輯</a>
+                <a href="{{ url_for('edit_record', record_id=record.id, next=request.full_path) }}">編輯</a>
                 <form action="{{ url_for('delete_record', record_id=record.id) }}" method="post"
                       onsubmit="return confirm('確定要刪除這筆紀錄嗎？')">
-                  <input type="hidden" name="next" value="{{ url_for('records') }}">
+                  <input type="hidden" name="next" value="{{ request.full_path }}">
                   <button type="submit" class="link-button danger">刪除</button>
                 </form>
               </div></td>
@@ -78,6 +78,13 @@
         </tbody>
       </table>
     </div>
+    {% if page.pages > 1 %}
+      <nav class="pagination" aria-label="分頁">
+        {% if page.has_prev %}<a href="{{ url_for('records', page=page.prev_num, **page_args) }}">← 上一頁</a>{% else %}<span class="disabled">← 上一頁</span>{% endif %}
+        <span>第 {{ page.page }} / {{ page.pages }} 頁</span>
+        {% if page.has_next %}<a href="{{ url_for('records', page=page.next_num, **page_args) }}">下一頁 →</a>{% else %}<span class="disabled">下一頁 →</span>{% endif %}
+      </nav>
+    {% endif %}
   {% else %}
     {% if filtering %}
       <p class="empty">沒有符合條件的紀錄，試著放寬篩選條件。</p>
