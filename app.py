@@ -34,7 +34,7 @@ db = SQLAlchemy(app)
 
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
-login_manager.login_message = "請先登入才能使用這個頁面。"
+login_manager.login_message = "請先登入才能使用此功能。"
 
 # 心情分數 1~10：(最低分數, 表情, 名稱)，由高到低比對
 MOOD_LEVELS = [
@@ -205,27 +205,28 @@ def login():
         return redirect(url_for("dashboard"))
 
     if request.method == "POST":
-        account = request.form.get("username", "").strip()
+        # 依教學以電子郵件登入；同時接受使用者名稱，方便記不得信箱時使用
+        account = request.form.get("email", "").strip()
         password = request.form.get("password", "")
         user = User.query.filter(
-            (User.username == account) | (User.email == account.lower())
+            (User.email == account.lower()) | (User.username == account)
         ).first()
 
         if user is None or not user.check_password(password):
-            flash("使用者名稱／電子郵件或密碼錯誤。", "error")
+            flash("電子郵件或密碼錯誤。", "error")
         else:
             login_user(user, remember=bool(request.form.get("remember")))
-            flash(f"歡迎回來，{user.username}！", "success")
+            flash("登入成功。", "success")
             return redirect(_safe_next(request.args.get("next")) or url_for("dashboard"))
 
     return render_template("login.html")
 
 
-@app.route("/logout", methods=["POST"])
+@app.route("/logout", methods=["GET", "POST"])
 @login_required
 def logout():
     logout_user()
-    flash("已登出，明天見！", "success")
+    flash("你已經登出。", "success")
     return redirect(url_for("index"))
 
 
