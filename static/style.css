@@ -149,3 +149,49 @@ input[type=range] { width: 100%; margin-top: 8px; accent-color: #7c3aed; }
   .records-table td:nth-child(4)::before { content: "睡眠："; color: #9ca3af; }
   .records-table td:nth-child(5)::before { content: "運動："; color: #9ca3af; }
 }
+
+/* 儀表板統計與圖表 */
+:root {
+  --surface-1: #ffffff;
+  --text-secondary: #6b7280;
+  --grid: #eef0f3;
+  /* 每個指標固定一個顏色（色盲安全的類別色），在所有圖表中一致 */
+  --series-mood: #257de0;
+  --series-stress: #f47230;
+  --series-sleep: #6a4ce2;
+  --series-exercise: #00b894;
+}
+
+.range-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin: 8px 0 12px; }
+.range-bar h2 { margin: 0; }
+.segmented { display: inline-flex; background: #ede9fe; border-radius: 999px; padding: 3px; }
+.segmented a { padding: 6px 14px; border-radius: 999px; text-decoration: none; font-size: .9rem; color: #5b21b6; }
+.segmented a.active { background: #fff; font-weight: bold; box-shadow: 0 1px 4px rgba(109, 40, 217, .15); }
+
+.stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+.stat {
+  background: #fff; border-radius: 14px; padding: 14px 16px;
+  box-shadow: 0 4px 16px rgba(109, 40, 217, .08); display: flex; flex-direction: column; gap: 4px;
+}
+.stat-label { color: var(--text-secondary); font-size: .85rem; display: flex; align-items: center; gap: 6px; }
+.stat-value { font-size: 1.7rem; font-weight: bold; color: #1f2937; font-variant-numeric: tabular-nums; }
+.stat-value small { font-size: .85rem; font-weight: normal; color: var(--text-secondary); }
+.key { display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--key); }
+
+.chart-card h2 { margin-bottom: 2px; }
+.chart-sub { margin: 0 0 12px; color: var(--text-secondary); font-size: .82rem; }
+.chart-box { position: relative; height: 260px; }
+.chart-box.short { height: 200px; }
+
+.insights { padding-left: 18px; margin: 0; line-height: 1.7; }
+.insights li + li { margin-top: 8px; }
+
+.latest { display: flex; gap: 12px; align-items: flex-start; }
+.latest .emoji { font-size: 1.8rem; }
+.latest > a { font-size: .85rem; text-decoration: none; }
+
+@media (max-width: 560px) {
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .stat-value { font-size: 1.4rem; }
+  .segmented a { padding: 6px 10px; font-size: .82rem; }
+}
