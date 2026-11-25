@@ -8,26 +8,80 @@ body {
   min-height: 100vh;
 }
 
-.container { max-width: 640px; margin: 0 auto; padding: 32px 16px; }
+a { color: #6d28d9; }
 
-header { text-align: center; margin-bottom: 24px; }
-h1 { margin: 0; font-size: 2.4rem; color: #6d28d9; }
-.tagline { margin: 4px 0 0; font-size: 1.1rem; color: #4c1d95; }
-.subtitle { color: #6b7280; margin-top: 4px; }
-
-.card {
-  background: #fff;
-  border-radius: 16px;
-  padding: 20px;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 16px rgba(109, 40, 217, 0.08);
+/* 導覽列 */
+.navbar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 20px; background: rgba(255, 255, 255, .85);
+  box-shadow: 0 1px 8px rgba(109, 40, 217, .08);
 }
+.brand { font-weight: bold; font-size: 1.25rem; text-decoration: none; }
+.nav-links { display: flex; align-items: center; gap: 14px; }
+.nav-links a { text-decoration: none; }
+.hello { color: #6b7280; font-size: .9rem; }
+.pill { background: #7c3aed; color: #fff !important; padding: 6px 14px; border-radius: 999px; }
+.inline { display: inline; margin: 0; }
 
+.container { max-width: 680px; margin: 0 auto; padding: 28px 16px; }
+
+/* 首頁 */
+.hero { text-align: center; margin: 24px 0 32px; }
+h1 { margin: 0; font-size: 2.6rem; color: #6d28d9; }
+.tagline { margin: 6px 0 0; font-size: 1.15rem; color: #4c1d95; }
+.subtitle { color: #6b7280; margin-top: 8px; }
+.hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
+.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; }
+.feature { text-align: center; margin: 0; }
+.feature h3 { margin: 6px 0; }
+.feature p { color: #6b7280; font-size: .9rem; margin: 0; }
+.feature .emoji { font-size: 2rem; }
+
+/* 卡片與表單 */
+.card {
+  background: #fff; border-radius: 16px; padding: 20px; margin-bottom: 20px;
+  box-shadow: 0 4px 16px rgba(109, 40, 217, .08);
+}
 h2 { margin-top: 0; font-size: 1.2rem; }
 
+label { display: block; margin-bottom: 14px; font-weight: 500; }
+.field-title { font-weight: 500; margin: 0 0 8px; }
+input[type=text], input[type=password], input[type=number], input[type=date], textarea {
+  display: block; width: 100%; margin-top: 6px; padding: 10px 12px; font: inherit;
+  border: 1px solid #d1d5db; border-radius: 10px;
+}
+input[type=range] { width: 100%; margin-top: 8px; accent-color: #7c3aed; }
+.checkbox { font-weight: normal; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.button, button.button {
+  display: inline-block; width: 100%; padding: 12px; font: inherit; font-weight: bold;
+  text-align: center; text-decoration: none;
+  color: #fff; background: #7c3aed; border: none; border-radius: 10px; cursor: pointer;
+}
+.button:hover { background: #6d28d9; }
+.hero .button { width: auto; padding: 12px 24px; }
+.button.secondary { background: #fff; color: #6d28d9; border: 2px solid #c4b5fd; }
+
+.link-button {
+  background: none; border: none; padding: 0; font: inherit; color: #6d28d9; cursor: pointer;
+}
+.link-button.danger { color: #dc2626; font-size: .85rem; }
+
+.auth { max-width: 400px; margin: 20px auto; }
+.switch { text-align: center; margin-bottom: 0; color: #6b7280; }
+.hint { color: #9ca3af; font-size: .8rem; text-align: center; margin-bottom: 0; }
+
+/* 訊息 */
+.flash { padding: 10px 14px; border-radius: 10px; margin-bottom: 16px; }
+.flash-success { background: #ecfdf5; color: #065f46; }
+.flash-error { background: #fef2f2; color: #991b1b; }
+.flash-message { background: #eff6ff; color: #1e40af; }
+
+/* 心情選擇 */
 .mood-picker { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 16px; }
-.mood-option { flex: 1; text-align: center; cursor: pointer; }
-.mood-option input { display: none; }
+.mood-option { flex: 1; text-align: center; cursor: pointer; margin: 0; font-weight: normal; }
+.mood-option input { position: absolute; opacity: 0; pointer-events: none; }
 .mood-option .emoji {
   display: block; font-size: 2rem; padding: 8px 0;
   border-radius: 12px; border: 2px solid transparent; transition: all .15s;
@@ -35,21 +89,17 @@ h2 { margin-top: 0; font-size: 1.2rem; }
 .mood-option .label { font-size: .85rem; color: #6b7280; }
 .mood-option input:checked + .emoji { border-color: #8b5cf6; background: #f5f3ff; transform: scale(1.08); }
 
-.note {
-  width: 100%; padding: 10px 12px; font-size: 1rem;
-  border: 1px solid #d1d5db; border-radius: 10px; margin-bottom: 12px;
-}
-
-button {
-  width: 100%; padding: 12px; font-size: 1rem; font-weight: bold;
-  color: #fff; background: #7c3aed; border: none; border-radius: 10px; cursor: pointer;
-}
-button:hover { background: #6d28d9; }
-
-.entries { list-style: none; padding: 0; margin: 0; }
-.entries li { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f3f4f6; }
-.entries li:last-child { border-bottom: none; }
-.entries .emoji { font-size: 1.8rem; }
-.entries p { margin: 4px 0; }
-.entries time { font-size: .8rem; color: #9ca3af; }
+/* 紀錄列表 */
+.records { list-style: none; padding: 0; margin: 0; }
+.records li { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid #f3f4f6; }
+.records li:last-child { border-bottom: none; }
+.records .emoji { font-size: 1.8rem; }
+.record-body { flex: 1; }
+.record-body p { margin: 6px 0 0; }
+.stats { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: .85rem; color: #6b7280; margin-top: 4px; }
 .empty { color: #9ca3af; text-align: center; }
+
+@media (max-width: 480px) {
+  .row { grid-template-columns: 1fr; }
+  .mood-option .emoji { font-size: 1.6rem; }
+}

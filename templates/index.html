@@ -1,52 +1,19 @@
-<!doctype html>
-<html lang="zh-Hant">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MoodTrack</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-  <main class="container">
-    <header>
-      <h1>MoodTrack</h1>
-      <h2 class="tagline">個人情緒與壓力紀錄分析平台</h2>
-      <p class="subtitle">記錄每天的心情、壓力、睡眠與運動狀況，協助你了解自己的生活變化。</p>
-    </header>
+{% extends "base.html" %}
+{% block content %}
+<header class="hero">
+  <h1>MoodTrack</h1>
+  <h2 class="tagline">個人情緒與壓力紀錄分析平台</h2>
+  <p class="subtitle">記錄每天的心情、壓力、睡眠與運動狀況，協助你了解自己的生活變化。</p>
+  <div class="hero-actions">
+    <a class="button" href="{{ url_for('register') }}">免費註冊開始記錄</a>
+    <a class="button secondary" href="{{ url_for('login') }}">我已經有帳號</a>
+  </div>
+</header>
 
-    <form class="card" action="{{ url_for('add_entry') }}" method="post">
-      <div class="mood-picker">
-        {% for code, (emoji, label) in moods.items() %}
-          <label class="mood-option">
-            <input type="radio" name="mood" value="{{ code }}" {% if loop.first %}checked{% endif %}>
-            <span class="emoji">{{ emoji }}</span>
-            <span class="label">{{ label }}</span>
-          </label>
-        {% endfor %}
-      </div>
-      <input class="note" type="text" name="note" maxlength="200" placeholder="想說點什麼？（可留空）">
-      <button type="submit">記錄心情</button>
-    </form>
-
-    <section class="card">
-      <h2>最近的心情</h2>
-      {% if entries %}
-        <ul class="entries">
-          {% for e in entries %}
-            <li>
-              <span class="emoji">{{ e.emoji }}</span>
-              <div>
-                <strong>{{ e.label }}</strong>
-                {% if e.note %}<p>{{ e.note }}</p>{% endif %}
-                <time>{{ e.created_at.strftime('%Y-%m-%d %H:%M') }}</time>
-              </div>
-            </li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <p class="empty">還沒有任何紀錄，記下第一筆心情吧！</p>
-      {% endif %}
-    </section>
-  </main>
-</body>
-</html>
+<section class="features">
+  <div class="card feature"><span class="emoji">😄</span><h3>心情</h3><p>五種表情，一秒記下今天的感覺。</p></div>
+  <div class="card feature"><span class="emoji">🔥</span><h3>壓力</h3><p>1～10 分，追蹤壓力的起伏。</p></div>
+  <div class="card feature"><span class="emoji">😴</span><h3>睡眠</h3><p>睡多久，往往決定隔天的心情。</p></div>
+  <div class="card feature"><span class="emoji">🏃</span><h3>運動</h3><p>動一動，看看對情緒有沒有幫助。</p></div>
+</section>
+{% endblock %}

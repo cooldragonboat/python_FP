@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}註冊 - MoodTrack{% endblock %}
+{% block content %}
+<form class="card auth" method="post">
+  <h2>建立帳號</h2>
+  <label>帳號
+    <input type="text" name="username" minlength="3" maxlength="30" required
+           value="{{ request.form.get('username', '') }}" autocomplete="username">
+  </label>
+  <label>密碼（至少 6 個字元）
+    <input type="password" name="password" minlength="6" required autocomplete="new-password">
+  </label>
+  <label>再輸入一次密碼
+    <input type="password" name="confirm" minlength="6" required autocomplete="new-password">
+  </label>
+  <button type="submit" class="button">註冊</button>
+  <p class="switch">已經有帳號了？<a href="{{ url_for('login') }}">登入</a></p>
+</form>
+{% endblock %}

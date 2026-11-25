@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}MoodTrack{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <nav class="navbar">
+    <a class="brand" href="{{ url_for('index') }}">MoodTrack</a>
+    <div class="nav-links">
+      {% if current_user.is_authenticated %}
+        <span class="hello">嗨，{{ current_user.username }}</span>
+        <a href="{{ url_for('dashboard') }}">儀表板</a>
+        <form action="{{ url_for('logout') }}" method="post" class="inline">
+          <button type="submit" class="link-button">登出</button>
+        </form>
+      {% else %}
+        <a href="{{ url_for('login') }}">登入</a>
+        <a href="{{ url_for('register') }}" class="pill">註冊</a>
+      {% endif %}
+    </div>
+  </nav>
+
+  <main class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
