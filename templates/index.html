@@ -4,10 +4,18 @@
   <h1>MoodTrack</h1>
   <h2 class="tagline">個人情緒與壓力紀錄分析平台</h2>
   <p class="subtitle">記錄每天的心情、壓力、睡眠與運動狀況，協助你了解自己的生活變化。</p>
-  <div class="hero-actions">
-    <a class="button" href="{{ url_for('register') }}">免費註冊開始記錄</a>
-    <a class="button secondary" href="{{ url_for('login') }}">我已經有帳號</a>
-  </div>
+  {% if current_user.is_authenticated %}
+    <p class="current-user">目前登入：<strong>{{ current_user.username }}</strong></p>
+    <div class="hero-actions">
+      <a class="button" href="{{ url_for('dashboard') }}">前往儀表板</a>
+      <a class="button secondary" href="{{ url_for('logout') }}">登出</a>
+    </div>
+  {% else %}
+    <div class="hero-actions">
+      <a class="button" href="{{ url_for('register') }}">註冊</a>
+      <a class="button secondary" href="{{ url_for('login') }}">登入</a>
+    </div>
+  {% endif %}
 </header>
 
 <section class="features">
