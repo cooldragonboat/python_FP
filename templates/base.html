@@ -4,11 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}MoodTrack{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logo.svg') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
   <nav class="navbar">
-    <a class="brand" href="{{ url_for('index') }}">MoodTrack</a>
+    <a class="brand" href="{{ url_for('index') }}">
+      <img src="{{ url_for('static', filename='logo.svg') }}" alt="" width="28" height="28"><span class="brand-text">MoodTrack</span>
+    </a>
     <div class="nav-links">
       {% if current_user.is_authenticated %}
         <span class="hello">嗨，{{ current_user.username }}</span>

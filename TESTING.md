@@ -53,6 +53,8 @@ python -m unittest -v
 | D2 | 最近 7 天統計 | 第 8 天的紀錄不算入平均，但算入總天數 | `test_statistics_last_7_days` | ✅ 通過 |
 | D3 | 最近一筆紀錄 | 顯示日期最新的一筆 | `test_latest_record_shown` | ✅ 通過 |
 | D4 | 圖表 | 心情壓力、睡眠、運動圖表與 Chart.js 正常載入 | `test_charts_rendered` | ✅ 通過 |
+| D6 | 連續記錄天數與心情日曆 | 連續 3 天、最長 4 天；日曆依心情分數上色 | `test_streak_and_mood_calendar` | ✅ 通過 |
+| D7 | 今天還沒記錄時的連續天數 | 從昨天往回算 | `test_streak_counts_from_yesterday_if_today_missing` | ✅ 通過 |
 | D5 | 資料分析頁 | 平均比較、最高最低、運動與壓力、散佈圖 | `test_analysis_page` | ✅ 通過 |
 
 ### 資料安全
@@ -66,7 +68,7 @@ python -m unittest -v
 | S5 | 自訂錯誤頁 | 不存在的網址顯示「找不到頁面」 | `test_error_page` | ✅ 通過 |
 | S6 | 機密檔案沒有上傳 | Git 沒有追蹤 `*.db`、`venv/`、`.env` | `test_secret_files_not_committed` | ✅ 通過 |
 
-**合計：30 項，全部通過。**
+**合計：32 項，全部通過。**
 
 ## 手動測試（瀏覽器）
 
