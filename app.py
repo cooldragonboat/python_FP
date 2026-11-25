@@ -171,7 +171,9 @@ def register():
         confirm = request.form.get("confirm", "")
 
         error = None
-        if not 3 <= len(username) <= 30:
+        if not username or not email or not password or not confirm:
+            error = "請完整填寫所有欄位。"
+        elif not 3 <= len(username) <= 30:
             error = "帳號長度需為 3～30 個字。"
         elif not EMAIL_PATTERN.fullmatch(email) or len(email) > 120:
             error = "請輸入有效的電子郵件。"
