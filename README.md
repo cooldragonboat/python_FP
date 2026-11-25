@@ -65,6 +65,7 @@ python_FP/
 │   ├── register.html    # 註冊
 │   ├── login.html       # 登入
 │   ├── dashboard.html   # 儀表板：今日狀態、最近紀錄
+│   ├── records.html     # 歷史情緒紀錄列表
 │   └── record_form.html # 新增／編輯每日情緒紀錄
 ├── static/
 │   └── style.css        # 樣式
