@@ -7,7 +7,7 @@
 <section class="card today">
   {% if today_record %}
     <p>今天已經記錄了 {{ today_record.emoji }} {{ today_record.mood_label }}（{{ today_record.mood_score }}/10），想改的話可以編輯。</p>
-    <a class="button secondary" href="{{ url_for('edit_record', record_id=today_record.id) }}">編輯今天的紀錄</a>
+    <a class="button secondary" href="{{ url_for('edit_record', record_id=today_record.id, next=url_for('dashboard')) }}">編輯今天的紀錄</a>
   {% else %}
     <p>今天還沒有紀錄，花 30 秒記一下吧！</p>
   {% endif %}
@@ -35,9 +35,10 @@
             {% if rec.note %}<p>{{ rec.note }}</p>{% endif %}
           </div>
           <div class="record-actions">
-            <a href="{{ url_for('edit_record', record_id=rec.id) }}">編輯</a>
+            <a href="{{ url_for('edit_record', record_id=rec.id, next=url_for('dashboard')) }}">編輯</a>
             <form action="{{ url_for('delete_record', record_id=rec.id) }}" method="post"
                   onsubmit="return confirm('確定要刪除這筆紀錄嗎？')">
+              <input type="hidden" name="next" value="{{ url_for('dashboard') }}">
               <button type="submit" class="link-button danger">刪除</button>
             </form>
           </div>
