@@ -1,9 +1,11 @@
 {% extends "base.html" %}
 {% block title %}儀表板 - MoodTrack{% endblock %}
 {% block content %}
-<h1 class="page-title">MoodTrack 儀表板</h1>
-<div class="welcome-row">
-  <p class="welcome">{{ greeting[0] }} {{ greeting[1] }}！歡迎，{{ current_user.username }}！</p>
+<div class="page-head">
+  <div>
+    <h1 class="page-title">MoodTrack 儀表板</h1>
+    <p class="welcome">{{ greeting[0] }} {{ greeting[1] }}！歡迎，{{ current_user.username }}！</p>
+  </div>
   {% if streak %}
     <span class="streak" title="最長連續紀錄 {{ longest_streak }} 天">
       🔥 已連續記錄 <strong>{{ streak }}</strong> 天{% if longest_streak > streak %}<small>（最長 {{ longest_streak }} 天）</small>{% elif streak >= 3 %}<small>（目前最長！）</small>{% endif %}
@@ -11,58 +13,88 @@
   {% endif %}
 </div>
 
-<section class="card today">
-  {% if today_record %}
-    <p>今天已經記錄了 {{ today_record.emoji }} {{ today_record.mood_label }}（{{ today_record.mood_score }}/10），想改的話可以編輯。</p>
-    <a class="button secondary" href="{{ url_for('edit_record', record_id=today_record.id, next=url_for('dashboard')) }}">編輯今天的紀錄</a>
-  {% else %}
-    <p>今天還沒有紀錄，花 30 秒記一下吧！</p>
-  {% endif %}
-  <a class="button" href="{{ url_for('new_record') }}">新增每日情緒紀錄</a>
-  <a class="button secondary" href="{{ url_for('records') }}">查看歷史情緒紀錄</a>
-</section>
-
-<section class="card">
-  <div class="card-header">
-    <h2>心情日曆</h2>
-    <span class="chart-sub">最近 5 週・顏色越深心情越好</span>
-  </div>
-  <div class="mood-calendar" role="table" aria-label="最近 5 週心情日曆">
-    <div class="cal-row cal-head" role="row">
-      {% for w in ['一', '二', '三', '四', '五', '六', '日'] %}<span role="columnheader">{{ w }}</span>{% endfor %}
-    </div>
-    {% for row in calendar %}
-      <div class="cal-row" role="row">
-        {% for cell in row %}
-          {% set r = cell.record %}
-          {% if cell.future %}
-            <span class="cal-cell future" role="cell"></span>
-          {% elif r %}
-            <a class="cal-cell level-{{ r.mood_score }}{{ ' today' if cell.today }}" role="cell"
-               href="{{ url_for('edit_record', record_id=r.id, next=url_for('dashboard')) }}"
-               title="{{ cell.date.isoformat() }}・{{ r.mood_label }} {{ r.mood_score }}/10・壓力 {{ r.stress_score }}/10">
-              <span class="cal-day">{{ cell.date.day }}</span>
-              <span class="cal-emoji">{{ r.emoji }}</span>
-            </a>
-          {% else %}
-            <span class="cal-cell empty{{ ' today' if cell.today }}" role="cell"
-                  title="{{ cell.date.isoformat() }}・沒有紀錄">
-              <span class="cal-day">{{ cell.date.day }}</span>
-            </span>
-          {% endif %}
-        {% endfor %}
+<div class="dash-top">
+  <div class="dash-left">
+    <section class="card today">
+      {% if today_record %}
+        <p class="today-text"><span class="today-emoji">{{ today_record.emoji }}</span>
+          <span>今天已經記錄了 <strong>{{ today_record.mood_label }}（{{ today_record.mood_score }}/10）</strong>，想改的話可以編輯。</span></p>
+      {% else %}
+        <p class="today-text"><span class="today-emoji">📝</span><span>今天還沒有紀錄，花 30 秒記一下吧！</span></p>
+      {% endif %}
+      <div class="button-row">
+        <a class="button" href="{{ url_for('new_record') }}">＋ 新增每日情緒紀錄</a>
+        {% if today_record %}
+          <a class="button secondary" href="{{ url_for('edit_record', record_id=today_record.id, next=url_for('dashboard')) }}">編輯今天的紀錄</a>
+        {% endif %}
+        <a class="button ghost" href="{{ url_for('records') }}">查看歷史情緒紀錄</a>
       </div>
-    {% endfor %}
-  </div>
-  <div class="cal-legend" aria-hidden="true">
-    <span>心情低</span>
-    {% for n in range(1, 11) %}<i class="level-{{ n }}"></i>{% endfor %}
-    <span>心情好</span>
-    <i class="empty"></i><span>沒紀錄</span>
-  </div>
-</section>
+    </section>
 
-{# 篩選放在所有統計與圖表的上方，一次控制全部 #}
+    <section class="card latest-card">
+      <h2>最近一筆紀錄</h2>
+      {% if latest_record %}
+        {% set rec = latest_record %}
+        <div class="latest">
+          <span class="emoji">{{ rec.emoji }}</span>
+          <div class="record-body">
+            <strong>{{ rec.record_date.strftime('%Y-%m-%d') }}・{{ rec.mood_label }}（{{ rec.mood_score }}/10）</strong>
+            <div class="stats">
+              <span>🔥 壓力 {{ rec.stress_score }}/10</span>
+              <span>😴 {{ '%g' % rec.sleep_hours }} 小時</span>
+              <span>🏃 {{ rec.exercise_minutes }} 分鐘</span>
+            </div>
+            <p>{{ rec.note or "沒有備註" }}</p>
+          </div>
+          <a href="{{ url_for('edit_record', record_id=rec.id, next=url_for('dashboard')) }}">編輯</a>
+        </div>
+      {% else %}
+        <p class="empty">目前還沒有情緒紀錄。</p>
+      {% endif %}
+    </section>
+  </div>
+
+  <section class="card calendar-card">
+    <div class="card-header">
+      <h2>心情日曆</h2>
+      <span class="chart-sub">最近 5 週・顏色越深心情越好</span>
+    </div>
+    <div class="mood-calendar" role="table" aria-label="最近 5 週心情日曆">
+      <div class="cal-row cal-head" role="row">
+        {% for w in ['一', '二', '三', '四', '五', '六', '日'] %}<span role="columnheader">{{ w }}</span>{% endfor %}
+      </div>
+      {% for row in calendar %}
+        <div class="cal-row" role="row">
+          {% for cell in row %}
+            {% set r = cell.record %}
+            {% if cell.future %}
+              <span class="cal-cell future" role="cell"></span>
+            {% elif r %}
+              <a class="cal-cell level-{{ r.mood_score }}{{ ' today' if cell.today }}" role="cell"
+                 href="{{ url_for('edit_record', record_id=r.id, next=url_for('dashboard')) }}"
+                 title="{{ cell.date.isoformat() }}・{{ r.mood_label }} {{ r.mood_score }}/10・壓力 {{ r.stress_score }}/10">
+                <span class="cal-day">{{ cell.date.day }}</span>
+                <span class="cal-emoji">{{ r.emoji }}</span>
+              </a>
+            {% else %}
+              <span class="cal-cell empty{{ ' today' if cell.today }}" role="cell"
+                    title="{{ cell.date.isoformat() }}・沒有紀錄">
+                <span class="cal-day">{{ cell.date.day }}</span>
+              </span>
+            {% endif %}
+          {% endfor %}
+        </div>
+      {% endfor %}
+    </div>
+    <div class="cal-legend" aria-hidden="true">
+      <span>心情低</span>
+      {% for n in range(1, 11) %}<i class="level-{{ n }}"></i>{% endfor %}
+      <span>心情好</span>
+      <i class="empty"></i><span>沒紀錄</span>
+    </div>
+  </section>
+</div>
+
 <div class="range-bar">
   <h2>近期統計</h2>
   <nav class="segmented" aria-label="統計區間">
@@ -109,19 +141,21 @@
       aria-label="最近 {{ days }} 天心情與壓力折線圖"></canvas></div>
   </section>
 
+  <div class="two-col">
   <section class="card chart-card">
-    <h2>最近 {{ days }} 天睡眠趨勢</h2>
-    <p class="chart-sub">小時・虛線為 7 小時參考線</p>
-    <div class="chart-box short"><canvas id="sleepChart" role="img"
-      aria-label="最近 {{ days }} 天睡眠時間折線圖"></canvas></div>
-  </section>
+      <h2>最近 {{ days }} 天睡眠趨勢</h2>
+      <p class="chart-sub">小時・虛線為 7 小時參考線</p>
+      <div class="chart-box short"><canvas id="sleepChart" role="img"
+        aria-label="最近 {{ days }} 天睡眠時間折線圖"></canvas></div>
+    </section>
 
   <section class="card chart-card">
-    <h2>最近 {{ days }} 天運動時間</h2>
-    <p class="chart-sub">分鐘</p>
-    <div class="chart-box short"><canvas id="exerciseChart" role="img"
-      aria-label="最近 {{ days }} 天運動時間長條圖"></canvas></div>
-  </section>
+      <h2>最近 {{ days }} 天運動時間</h2>
+      <p class="chart-sub">分鐘</p>
+      <div class="chart-box short"><canvas id="exerciseChart" role="img"
+        aria-label="最近 {{ days }} 天運動時間長條圖"></canvas></div>
+    </section>
+  </div>
 
   {% if insights %}
     <section class="card">
@@ -147,28 +181,6 @@
     <p class="empty">最近 {{ days }} 天沒有紀錄，目前沒有足夠資料可以顯示圖表。</p>
   </section>
 {% endif %}
-
-<section class="card">
-  <h2>最近一筆紀錄</h2>
-  {% if latest_record %}
-    {% set rec = latest_record %}
-    <div class="latest">
-      <span class="emoji">{{ rec.emoji }}</span>
-      <div class="record-body">
-        <strong>{{ rec.record_date.strftime('%Y-%m-%d') }}・{{ rec.mood_label }}（{{ rec.mood_score }}/10）</strong>
-        <div class="stats">
-          <span>🔥 壓力 {{ rec.stress_score }}/10</span>
-          <span>😴 {{ '%g' % rec.sleep_hours }} 小時</span>
-          <span>🏃 {{ rec.exercise_minutes }} 分鐘</span>
-        </div>
-        <p>{{ rec.note or "沒有備註" }}</p>
-      </div>
-      <a href="{{ url_for('edit_record', record_id=rec.id, next=url_for('dashboard')) }}">編輯</a>
-    </div>
-  {% else %}
-    <p class="empty">目前還沒有情緒紀錄。</p>
-  {% endif %}
-</section>
 
 {% if stats.recent_count %}
 <script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
