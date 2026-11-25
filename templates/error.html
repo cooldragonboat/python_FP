@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} - MoodTrack{% endblock %}
+{% block content %}
+<section class="card error-page">
+  <p class="error-emoji">🧭</p>
+  <h1>{{ title }}</h1>
+  <p>{{ message }}</p>
+  <a class="button" href="{{ url_for('index') }}">回到首頁</a>
+</section>
+{% endblock %}

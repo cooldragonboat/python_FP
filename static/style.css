@@ -225,3 +225,15 @@ input[type=range] { width: 100%; margin-top: 8px; accent-color: #7c3aed; }
 @media (max-width: 640px) {
   .compare-pair { grid-template-columns: 1fr; }
 }
+
+/* 頁尾與錯誤頁 */
+.footer { text-align: center; color: #9ca3af; font-size: .8rem; line-height: 1.6; padding: 12px 16px 32px; }
+.error-page { text-align: center; padding: 40px 20px; }
+.error-page h1 { color: #4c1d95; font-size: 1.8rem; margin: 0 0 8px; }
+.error-page .button { width: auto; padding: 12px 28px; margin-top: 8px; }
+.error-emoji { font-size: 3rem; margin: 0; }
+
+/* 分頁 */
+.pagination { display: flex; justify-content: center; align-items: center; gap: 18px; margin-top: 16px; font-size: .9rem; color: var(--text-secondary); }
+.pagination a { text-decoration: none; }
+.pagination .disabled { color: #d1d5db; }

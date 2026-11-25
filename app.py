@@ -27,7 +27,10 @@ app = Flask(__name__)
 # 正式部署時用環境變數 SECRET_KEY 覆蓋，不要把真正的金鑰寫進程式碼
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-key")
 # 資料庫放在專案根目錄的 moodtrack.db（*.db 已被 .gitignore 排除）
-app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{BASE_DIR / 'moodtrack.db'}"
+# 自動化測試會用環境變數 DATABASE_URL 換成暫時的資料庫，不會動到真正的資料
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
+    "DATABASE_URL", f"sqlite:///{BASE_DIR / 'moodtrack.db'}"
+)
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
@@ -398,6 +401,9 @@ def new_record():
     )
 
 
+RECORDS_PER_PAGE = 20
+
+
 def _parse_date(text):
     try:
         return date.fromisoformat(text) if text else None
@@ -435,15 +441,19 @@ def records():
         "min_stress": min_stress,
     }
     filtering = any(v not in ("", None) for v in filters.values())
-    user_records = query.order_by(MoodRecord.record_date.desc()).all()
-    total = (
-        MoodRecord.query.filter_by(user_id=current_user.id).count()
-        if filtering
-        else len(user_records)
+    page = query.order_by(MoodRecord.record_date.desc()).paginate(
+        page=request.args.get("page", 1, type=int),
+        per_page=RECORDS_PER_PAGE,
+        error_out=False,
     )
+    total = MoodRecord.query.filter_by(user_id=current_user.id).count()
+    # 換頁時保留篩選條件
+    page_args = {k: v for k, v in filters.items() if v not in ("", None)}
     return render_template(
         "records.html",
-        records=user_records,
+        records=page.items,
+        page=page,
+        page_args=page_args,
         filters=filters,
         filtering=filtering,
         total=total,
@@ -591,6 +601,32 @@ def delete_record(record_id: int):
 
     flash("情緒紀錄已刪除。", "success")
     return redirect(_safe_next(request.form.get("next")) or url_for("records"))
+
+
+# ---------------------------------------------------------------------------
+# 錯誤頁面
+# ---------------------------------------------------------------------------
+
+
+@app.errorhandler(404)
+def page_not_found(error):
+    return (
+        render_template(
+            "error.html", title="找不到頁面", message="你要尋找的頁面不存在。"
+        ),
+        404,
+    )
+
+
+@app.errorhandler(500)
+def internal_server_error(error):
+    db.session.rollback()
+    return (
+        render_template(
+            "error.html", title="系統錯誤", message="系統發生錯誤，請稍後再試。"
+        ),
+        500,
+    )
 
 
 if __name__ == "__main__":
