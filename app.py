@@ -174,7 +174,7 @@ def register():
         if not username or not email or not password or not confirm:
             error = "請完整填寫所有欄位。"
         elif not 3 <= len(username) <= 30:
-            error = "帳號長度需為 3～30 個字。"
+            error = "使用者名稱長度需為 3～30 個字。"
         elif not EMAIL_PATTERN.fullmatch(email) or len(email) > 120:
             error = "請輸入有效的電子郵件。"
         elif len(password) < 6:
@@ -182,7 +182,7 @@ def register():
         elif password != confirm:
             error = "兩次輸入的密碼不一致。"
         elif User.query.filter_by(username=username).first():
-            error = "這個帳號已經有人使用了。"
+            error = "這個使用者名稱已經有人使用了。"
         elif User.query.filter_by(email=email).first():
             error = "這個電子郵件已經註冊過了。"
 
@@ -212,7 +212,7 @@ def login():
         ).first()
 
         if user is None or not user.check_password(password):
-            flash("帳號／電子郵件或密碼錯誤。", "error")
+            flash("使用者名稱／電子郵件或密碼錯誤。", "error")
         else:
             login_user(user, remember=bool(request.form.get("remember")))
             flash(f"歡迎回來，{user.username}！", "success")
