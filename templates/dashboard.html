@@ -16,6 +16,9 @@
 {% endblock %}
 {% block content %}
 {% set r = today_record %}
+<h1 class="page-title">MoodTrack 儀表板</h1>
+<p class="welcome">歡迎，{{ current_user.username }}！</p>
+
 <form class="card" action="{{ url_for('save_record') }}" method="post">
   <h2>{{ '更新今天的紀錄' if r else '今天過得如何？' }}</h2>
 
