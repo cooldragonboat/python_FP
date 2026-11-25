@@ -3,7 +3,7 @@
 {% block content %}
 <form class="card auth" method="post">
   <h2>登入</h2>
-  <label>帳號
+  <label>帳號或電子郵件
     <input type="text" name="username" required
            value="{{ request.form.get('username', '') }}" autocomplete="username">
   </label>

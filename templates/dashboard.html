@@ -1,5 +1,19 @@
 {% extends "base.html" %}
-{% block title %}儀表板 - MoodTrack{% endblock %}
+{% block title %}儀表板 - MoodTrack<script>
+  // 心情滑桿：分數改變時即時換表情
+  const moodLevels = {{ mood_levels | tojson }};
+  const moodInput = document.getElementById('mood-input');
+  function updateMood() {
+    const score = Number(moodInput.value);
+    const level = moodLevels.find(([low]) => score >= low);
+    document.getElementById('mood-value').value = score;
+    document.getElementById('mood-face').textContent = level[1];
+    document.getElementById('mood-label').textContent = level[2];
+  }
+  moodInput.addEventListener('input', updateMood);
+  updateMood();
+</script>
+{% endblock %}
 {% block content %}
 {% set r = today_record %}
 <form class="card" action="{{ url_for('save_record') }}" method="post">
@@ -9,20 +23,17 @@
     <input type="date" name="date" value="{{ today.isoformat() }}" max="{{ today.isoformat() }}" required>
   </label>
 
-  <p class="field-title">心情</p>
-  <div class="mood-picker">
-    {% for score, (emoji, label) in moods.items() %}
-      <label class="mood-option">
-        <input type="radio" name="mood" value="{{ score }}" required
-               {% if (r and r.mood == score) or (not r and score == 3) %}checked{% endif %}>
-        <span class="emoji">{{ emoji }}</span>
-        <span class="label">{{ label }}</span>
-      </label>
-    {% endfor %}
-  </div>
+  {% set mood_value = r.mood_score if r else 6 %}
+  <label>心情分數：<output id="mood-value">{{ mood_value }}</output> / 10
+    <div class="mood-slider">
+      <span id="mood-face" class="mood-face">{{ r.emoji if r else '🙂' }}</span>
+      <input type="range" name="mood_score" min="1" max="10" value="{{ mood_value }}" id="mood-input">
+    </div>
+    <span id="mood-label" class="mood-label">{{ r.mood_label if r else '' }}</span>
+  </label>
 
-  <label>壓力指數：<output id="stress-value">{{ r.stress if r else 5 }}</output> / 10
-    <input type="range" name="stress" min="1" max="10" value="{{ r.stress if r else 5 }}"
+  <label>壓力分數：<output id="stress-value">{{ r.stress_score if r else 5 }}</output> / 10
+    <input type="range" name="stress_score" min="1" max="10" value="{{ r.stress_score if r else 5 }}"
            oninput="document.getElementById('stress-value').value = this.value">
   </label>
 
@@ -51,9 +62,9 @@
         <li>
           <span class="emoji">{{ rec.emoji }}</span>
           <div class="record-body">
-            <strong>{{ rec.date.strftime('%Y-%m-%d') }}・{{ rec.mood_label }}</strong>
+            <strong>{{ rec.record_date.strftime('%Y-%m-%d') }}・{{ rec.mood_label }}（{{ rec.mood_score }}/10）</strong>
             <div class="stats">
-              <span>🔥 壓力 {{ rec.stress }}/10</span>
+              <span>🔥 壓力 {{ rec.stress_score }}/10</span>
               <span>😴 {{ '%g' % rec.sleep_hours }} 小時</span>
               <span>🏃 {{ rec.exercise_minutes }} 分鐘</span>
             </div>
@@ -70,4 +81,18 @@
     <p class="empty">還沒有任何紀錄，記下第一天吧！</p>
   {% endif %}
 </section>
+<script>
+  // 心情滑桿：分數改變時即時換表情
+  const moodLevels = {{ mood_levels | tojson }};
+  const moodInput = document.getElementById('mood-input');
+  function updateMood() {
+    const score = Number(moodInput.value);
+    const level = moodLevels.find(([low]) => score >= low);
+    document.getElementById('mood-value').value = score;
+    document.getElementById('mood-face').textContent = level[1];
+    document.getElementById('mood-label').textContent = level[2];
+  }
+  moodInput.addEventListener('input', updateMood);
+  updateMood();
+</script>
 {% endblock %}
