@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}歷史紀錄 - MoodTrack{% endblock %}
+{% block content %}
+<h1 class="page-title">歷史情緒紀錄</h1>
+<p class="welcome">{{ current_user.username }} 的所有紀錄{% if records %}，共 {{ records|length }} 筆，依日期由新到舊排列{% endif %}。</p>
+
+<section class="card">
+  {% if records %}
+    <div class="table-wrap">
+      <table class="records-table">
+        <thead>
+          <tr>
+            <th>日期</th>
+            <th>心情</th>
+            <th>壓力</th>
+            <th>睡眠時間</th>
+            <th>運動時間</th>
+            <th>備註</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for record in records %}
+            <tr>
+              <td class="nowrap">{{ record.record_date }}</td>
+              <td class="nowrap">{{ record.emoji }} {{ record.mood_score }} / 10</td>
+              <td class="nowrap">{{ record.stress_score }} / 10</td>
+              <td class="nowrap">{{ '%g' % record.sleep_hours }} 小時</td>
+              <td class="nowrap">{{ record.exercise_minutes }} 分鐘</td>
+              <td class="note-cell">{{ record.note or "沒有備註" }}</td>
+              <td class="nowrap"><div class="actions">
+                <a href="{{ url_for('edit_record', record_id=record.id, next=url_for('records')) }}">編輯</a>
+                <form action="{{ url_for('delete_record', record_id=record.id) }}" method="post"
+                      onsubmit="return confirm('確定要刪除這筆紀錄嗎？')">
+                  <input type="hidden" name="next" value="{{ url_for('records') }}">
+                  <button type="submit" class="link-button danger">刪除</button>
+                </form>
+              </div></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="empty">目前還沒有任何情緒紀錄。</p>
+    <a class="button" href="{{ url_for('new_record') }}">新增第一筆紀錄</a>
+  {% endif %}
+</section>
+
+<p class="switch">
+  {% if records %}<a href="{{ url_for('new_record') }}">新增情緒紀錄</a>・{% endif %}<a href="{{ url_for('dashboard') }}">回到儀表板</a>
+</p>
+{% endblock %}

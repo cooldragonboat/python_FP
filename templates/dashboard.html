@@ -12,10 +12,14 @@
     <p>今天還沒有紀錄，花 30 秒記一下吧！</p>
   {% endif %}
   <a class="button" href="{{ url_for('new_record') }}">新增每日情緒紀錄</a>
+  <a class="button secondary" href="{{ url_for('records') }}">查看歷史情緒紀錄</a>
 </section>
 
 <section class="card">
-  <h2>最近的紀錄</h2>
+  <div class="card-header">
+    <h2>最近的紀錄</h2>
+    {% if total > records|length %}<a href="{{ url_for('records') }}">查看全部 {{ total }} 筆 →</a>{% endif %}
+  </div>
   {% if records %}
     <ul class="records">
       {% for rec in records %}

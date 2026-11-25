@@ -13,6 +13,7 @@
       {% if current_user.is_authenticated %}
         <span class="hello">嗨，{{ current_user.username }}</span>
         <a href="{{ url_for('dashboard') }}">儀表板</a>
+        <a href="{{ url_for('records') }}">歷史紀錄</a>
         <form action="{{ url_for('logout') }}" method="post" class="inline">
           <button type="submit" class="link-button">登出</button>
         </form>

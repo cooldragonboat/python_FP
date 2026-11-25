@@ -223,12 +223,13 @@ def dashboard():
     records = (
         MoodRecord.query.filter_by(user_id=current_user.id)
         .order_by(MoodRecord.record_date.desc())
-        .limit(30)
+        .limit(5)
         .all()
     )
     today_record = next((r for r in records if r.record_date == date.today()), None)
+    total = MoodRecord.query.filter_by(user_id=current_user.id).count()
     return render_template(
-        "dashboard.html", records=records, today_record=today_record
+        "dashboard.html", records=records, today_record=today_record, total=total
     )
 
 
@@ -316,6 +317,18 @@ def new_record():
     )
 
 
+@app.route("/records")
+@login_required
+def records():
+    """歷史情緒紀錄：只查目前使用者的紀錄，依日期由新到舊。"""
+    user_records = (
+        MoodRecord.query.filter_by(user_id=current_user.id)
+        .order_by(MoodRecord.record_date.desc())
+        .all()
+    )
+    return render_template("records.html", records=user_records)
+
+
 @app.route("/records/<int:record_id>/edit", methods=["GET", "POST"])
 @login_required
 def edit_record(record_id: int):
@@ -341,7 +354,7 @@ def edit_record(record_id: int):
             setattr(record, key, value)
         db.session.commit()
         flash("情緒紀錄已更新。", "success")
-        return redirect(url_for("dashboard"))
+        return redirect(_safe_next(request.args.get("next")) or url_for("dashboard"))
 
     values = {
         "record_date": record.record_date.isoformat(),
@@ -364,7 +377,7 @@ def delete_record(record_id: int):
         db.session.delete(record)
         db.session.commit()
         flash("情緒紀錄已刪除。", "success")
-    return redirect(url_for("dashboard"))
+    return redirect(_safe_next(request.form.get("next")) or url_for("dashboard"))
 
 
 if __name__ == "__main__":
