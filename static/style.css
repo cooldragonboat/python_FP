@@ -112,10 +112,40 @@ input[type=range] { width: 100%; margin-top: 8px; accent-color: #7c3aed; }
 .record-actions form { margin: 0; }
 
 .today p { margin-top: 0; }
-.today .button + .button { margin-top: 10px; }
+
 .help { display: block; color: #9ca3af; font-size: .8rem; font-weight: normal; margin-top: 4px; }
 
 @media (max-width: 480px) {
+  .navbar { padding: 10px 14px; }
+  .nav-links { gap: 10px; font-size: .92rem; white-space: nowrap; }
+  .hello { display: none; }
   .row { grid-template-columns: 1fr; }
   .mood-option .emoji { font-size: 1.6rem; }
+}
+
+/* 歷史紀錄表格 */
+.card-header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.card-header a { font-size: .9rem; text-decoration: none; }
+.today .button { margin-top: 10px; }
+.table-wrap { overflow-x: auto; }
+.records-table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+.records-table th, .records-table td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #f3f4f6; vertical-align: top; }
+.records-table th { color: #6b7280; font-weight: 600; background: #faf5ff; }
+.records-table tbody tr:hover { background: #fafafa; }
+.records-table .nowrap { white-space: nowrap; }
+.records-table .note-cell { min-width: 160px; color: #374151; }
+.records-table .actions { display: flex; gap: 10px; }
+.records-table .actions form { margin: 0; }
+.records-table .actions a { text-decoration: none; }
+
+@media (max-width: 640px) {
+  .records-table thead { display: none; }
+  .records-table, .records-table tbody, .records-table tr, .records-table td { display: block; width: 100%; }
+  .records-table tr { padding: 10px 0; border-bottom: 1px solid #ede9fe; }
+  .records-table td { border: none; padding: 3px 0; }
+  .records-table td:nth-child(1) { font-weight: bold; }
+  .records-table td:nth-child(2)::before { content: "心情："; color: #9ca3af; }
+  .records-table td:nth-child(3)::before { content: "壓力："; color: #9ca3af; }
+  .records-table td:nth-child(4)::before { content: "睡眠："; color: #9ca3af; }
+  .records-table td:nth-child(5)::before { content: "運動："; color: #9ca3af; }
 }
