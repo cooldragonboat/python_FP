@@ -25,6 +25,10 @@ MoodTrack 是一套使用 Flask 開發的**個人情緒與壓力紀錄分析平�
 | 資料視覺化 | Chart.js 4.4.1（放在本機 `static/vendor/`） |
 | 測試 | Python 內建 `unittest` |
 
+## 專題報告
+
+[`docs/report/MoodTrack_期末專題報告.docx`](docs/report/MoodTrack_期末專題報告.docx)：共 15 章，含系統架構圖、流程圖、ER 圖、網站截圖與測試結果。
+
 ## 系統架構
 
 ![MoodTrack 系統架構圖](docs/diagrams/architecture.png)
@@ -123,6 +127,7 @@ python_FP/
 ├── README.md            # 專案說明
 ├── TESTING.md           # 測試紀錄
 ├── docs/diagrams/       # 系統架構圖、系統流程圖、ER 圖（PNG + SVG）
+├── docs/report/         # 期末專題報告（Word）
 ├── tests/
 │   └── test_app.py      # 自動化測試（33 項）
 ├── templates/
