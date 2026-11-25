@@ -1,12 +1,12 @@
 # MoodTrack（python_FP）
 
-程式設計 Python 課程期末專案：用 Flask + SQLite 做的心情紀錄網站。
+個人情緒與壓力紀錄分析平台——程式設計 Python 課程期末專案，使用 Flask + SQLite。
 
 ## 目前進度（第一階段：最小可執行版本）
 
 - [x] Flask 網站可以啟動
 - [x] 首頁可以顯示，能選擇心情、寫一句話並記錄
-- [x] SQLite 資料庫自動建立（`instance/moodtrack.db`）
+- [x] SQLite 資料庫自動建立（專案根目錄的 `moodtrack.db`）
 - [x] 專案提交到 GitHub
 
 ## 環境需求
@@ -37,7 +37,7 @@ python_FP/
 │   └── index.html     # 首頁
 ├── static/
 │   └── style.css      # 樣式
-├── instance/          # 執行後自動產生，放 SQLite 資料庫（不提交）
+├── moodtrack.db       # 執行後自動產生的 SQLite 資料庫（不提交）
 └── venv/              # 虛擬環境（不提交）
 ```
 

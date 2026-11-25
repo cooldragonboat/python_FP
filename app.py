@@ -1,13 +1,21 @@
 """MoodTrack：記錄每天心情的 Flask 網站（第一階段：最小可執行版本）。"""
 
+import os
 from datetime import datetime
+from pathlib import Path
 
 from flask import Flask, redirect, render_template, request, url_for
 from flask_sqlalchemy import SQLAlchemy
 
+BASE_DIR = Path(__file__).resolve().parent
+
 app = Flask(__name__)
-# 相對路徑的 SQLite 會放在 instance/ 資料夾裡（已被 .gitignore 排除）
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///moodtrack.db"
+
+# 正式部署時用環境變數 SECRET_KEY 覆蓋，不要把真正的金鑰寫進程式碼
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-key")
+# 資料庫放在專案根目錄的 moodtrack.db（*.db 已被 .gitignore 排除）
+app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{BASE_DIR / 'moodtrack.db'}"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 

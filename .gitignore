@@ -25,6 +25,3 @@ env/
 # Operating system
 .DS_Store
 Thumbs.db
-
-# Flask instance folder (SQLite database lives here)
-instance/
