@@ -289,6 +289,23 @@ class DashboardTests(MoodTrackTestCase):
         self.assertEqual(r.status_code, 200)
         r.close()
 
+    def test_streak_and_mood_calendar(self):
+        client = self.user_client("testuser")
+        for n in (0, 1, 2, 5, 6, 7, 8):
+            self.add_record(client, record_date=day(n), mood_score=9 if n == 0 else 3)
+        html = self.text(client.get("/dashboard"))
+        self.assertIn("已連續記錄 <strong>3</strong> 天", html)
+        self.assertIn("最長 4 天", html)
+        self.assertIn("心情日曆", html)
+        self.assertIn("cal-cell level-9 today", html)
+        self.assertEqual(html.count("cal-cell level-3"), 6)
+
+    def test_streak_counts_from_yesterday_if_today_missing(self):
+        client = self.user_client("testuser")
+        for n in (1, 2):
+            self.add_record(client, record_date=day(n))
+        self.assertIn("已連續記錄 <strong>2</strong> 天", self.text(client.get("/dashboard")))
+
     def test_analysis_page(self):
         client = self.user_client("testuser")
         self.add_record(client, record_date=day(0), exercise_minutes=30, stress_score=3)

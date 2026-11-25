@@ -2,7 +2,14 @@
 {% block title %}儀表板 - MoodTrack{% endblock %}
 {% block content %}
 <h1 class="page-title">MoodTrack 儀表板</h1>
-<p class="welcome">歡迎，{{ current_user.username }}！</p>
+<div class="welcome-row">
+  <p class="welcome">{{ greeting[0] }} {{ greeting[1] }}！歡迎，{{ current_user.username }}！</p>
+  {% if streak %}
+    <span class="streak" title="最長連續紀錄 {{ longest_streak }} 天">
+      🔥 已連續記錄 <strong>{{ streak }}</strong> 天{% if longest_streak > streak %}<small>（最長 {{ longest_streak }} 天）</small>{% elif streak >= 3 %}<small>（目前最長！）</small>{% endif %}
+    </span>
+  {% endif %}
+</div>
 
 <section class="card today">
   {% if today_record %}
@@ -13,6 +20,46 @@
   {% endif %}
   <a class="button" href="{{ url_for('new_record') }}">新增每日情緒紀錄</a>
   <a class="button secondary" href="{{ url_for('records') }}">查看歷史情緒紀錄</a>
+</section>
+
+<section class="card">
+  <div class="card-header">
+    <h2>心情日曆</h2>
+    <span class="chart-sub">最近 5 週・顏色越深心情越好</span>
+  </div>
+  <div class="mood-calendar" role="table" aria-label="最近 5 週心情日曆">
+    <div class="cal-row cal-head" role="row">
+      {% for w in ['一', '二', '三', '四', '五', '六', '日'] %}<span role="columnheader">{{ w }}</span>{% endfor %}
+    </div>
+    {% for row in calendar %}
+      <div class="cal-row" role="row">
+        {% for cell in row %}
+          {% set r = cell.record %}
+          {% if cell.future %}
+            <span class="cal-cell future" role="cell"></span>
+          {% elif r %}
+            <a class="cal-cell level-{{ r.mood_score }}{{ ' today' if cell.today }}" role="cell"
+               href="{{ url_for('edit_record', record_id=r.id, next=url_for('dashboard')) }}"
+               title="{{ cell.date.isoformat() }}・{{ r.mood_label }} {{ r.mood_score }}/10・壓力 {{ r.stress_score }}/10">
+              <span class="cal-day">{{ cell.date.day }}</span>
+              <span class="cal-emoji">{{ r.emoji }}</span>
+            </a>
+          {% else %}
+            <span class="cal-cell empty{{ ' today' if cell.today }}" role="cell"
+                  title="{{ cell.date.isoformat() }}・沒有紀錄">
+              <span class="cal-day">{{ cell.date.day }}</span>
+            </span>
+          {% endif %}
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </div>
+  <div class="cal-legend" aria-hidden="true">
+    <span>心情低</span>
+    {% for n in range(1, 11) %}<i class="level-{{ n }}"></i>{% endfor %}
+    <span>心情好</span>
+    <i class="empty"></i><span>沒紀錄</span>
+  </div>
 </section>
 
 {# 篩選放在所有統計與圖表的上方，一次控制全部 #}

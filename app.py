@@ -245,6 +245,53 @@ def _compare(records, condition, yes_label, no_label):
     }
 
 
+def _streaks(record_dates, today):
+    """回傳 (目前連續天數, 最長連續天數)。今天還沒記錄時，從昨天往回算。"""
+    dates = set(record_dates)
+    current = 0
+    cursor = today if today in dates else today - timedelta(days=1)
+    while cursor in dates:
+        current += 1
+        cursor -= timedelta(days=1)
+
+    longest = run = 0
+    previous = None
+    for d in sorted(dates):
+        run = run + 1 if previous and d - previous == timedelta(days=1) else 1
+        longest = max(longest, run)
+        previous = d
+    return current, longest
+
+
+def _mood_calendar(records_by_date, today, weeks=5):
+    """最近幾週的心情日曆：週一開始，每格是一天。"""
+    end = today + timedelta(days=6 - today.weekday())  # 這週日
+    start = end - timedelta(days=weeks * 7 - 1)
+    rows = []
+    for w in range(weeks):
+        row = []
+        for d in range(7):
+            day_ = start + timedelta(days=w * 7 + d)
+            r = records_by_date.get(day_)
+            row.append({
+                "date": day_,
+                "record": r,
+                "future": day_ > today,
+                "today": day_ == today,
+            })
+        rows.append(row)
+    return rows
+
+
+def _greeting(now):
+    hour = now.hour
+    if 5 <= hour < 11:
+        return "☀️", "早安"
+    if 11 <= hour < 18:
+        return "🌤️", "午安"
+    return "🌙", "晚安"
+
+
 @app.route("/dashboard")
 @login_required
 def dashboard():
@@ -296,6 +343,21 @@ def dashboard():
         "sleep": _average([r.sleep_hours for r in in_range]),
         "exercise_total": sum(r.exercise_minutes for r in in_range),
     }
+    all_dates = [
+        d for (d,) in db.session.query(MoodRecord.record_date)
+        .filter(MoodRecord.user_id == current_user.id)
+        .all()
+    ]
+    streak, longest_streak = _streaks(all_dates, today)
+    calendar_start = today - timedelta(days=40)
+    calendar_records = {
+        r.record_date: r
+        for r in MoodRecord.query.filter(
+            MoodRecord.user_id == current_user.id,
+            MoodRecord.record_date >= calendar_start,
+        )
+    }
+
     insights = [
         i
         for i in (
@@ -314,6 +376,10 @@ def dashboard():
         chart=chart,
         stats=stats,
         insights=insights,
+        streak=streak,
+        longest_streak=longest_streak,
+        calendar=_mood_calendar(calendar_records, today),
+        greeting=_greeting(datetime.now()),
     )
 
 

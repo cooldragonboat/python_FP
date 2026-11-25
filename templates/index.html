@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <header class="hero">
+  <img class="hero-logo" src="{{ url_for('static', filename='logo.svg') }}" alt="" width="84" height="84">
   <h1>MoodTrack</h1>
   <h2 class="tagline">個人情緒與壓力紀錄分析平台</h2>
   <p class="subtitle">記錄每天的心情、壓力、睡眠與運動狀況，協助你了解自己的生活變化。</p>
@@ -23,5 +24,14 @@
   <div class="card feature"><span class="emoji">🔥</span><h3>壓力</h3><p>1～10 分，追蹤壓力的起伏。</p></div>
   <div class="card feature"><span class="emoji">😴</span><h3>睡眠</h3><p>睡多久，往往決定隔天的心情。</p></div>
   <div class="card feature"><span class="emoji">🏃</span><h3>運動</h3><p>動一動，看看對情緒有沒有幫助。</p></div>
+</section>
+
+<section class="card how">
+  <h3>三步驟開始</h3>
+  <ol>
+    <li><strong>每天 30 秒</strong>：拉一下心情和壓力滑桿，填睡眠和運動。</li>
+    <li><strong>看見趨勢</strong>：儀表板的心情日曆和折線圖，一眼看出這週過得如何。</li>
+    <li><strong>找出模式</strong>：資料分析會比較睡眠、運動和心情之間的關係。</li>
+  </ol>
 </section>
 {% endblock %}
