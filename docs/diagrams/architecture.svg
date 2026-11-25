@@ -2,32 +2,35 @@
      font-family="'Microsoft JhengHei','Noto Sans TC','PingFang TC','WenQuanYi Zen Hei',sans-serif">
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-      <path d="M0,0 L10,5 L0,10 z" fill="#4b5563"/>
+      <path d="M0,1 L10,5 L0,9 z" fill="#64748b"/>
     </marker>
     <marker id="arrowP" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="#6d28d9"/>
     </marker>
+<filter id="sh" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#6d28d9" flood-opacity="0.08"/>
+    </filter>
     <style>
-      .title { font-size: 26px; font-weight: 700; fill: #1f2937; }
-      .sub { font-size: 14px; fill: #6b7280; }
-      .zone { fill: #f9fafb; stroke: #d1d5db; stroke-width: 1.5; }
-      .zone-flask { fill: #faf5ff; stroke: #c4b5fd; stroke-width: 1.5; }
-      .zone-h { font-size: 18px; font-weight: 700; fill: #1f2937; }
+      .title { font-size: 28px; font-weight: 700; fill: #312e81; }
+      .sub { font-size: 15px; fill: #64748b; }
+      .zone { fill: #f8fafc; stroke: #e2e8f0; stroke-width: 1.5; }
+      .zone-flask { fill: #fbfaff; stroke: #ddd6fe; stroke-width: 1.5; }
+      .zone-h { font-size: 19px; font-weight: 700; fill: #4c1d95; }
       .zone-s { font-size: 13px; fill: #6b7280; }
-      .box { fill: #ffffff; stroke: #d1d5db; stroke-width: 1.2; }
-      .layer { fill: #ffffff; stroke: #ddd6fe; stroke-width: 1.2; }
+      .box { fill: #ffffff; stroke: #e2e8f0; stroke-width: 1.2; filter: url(#sh); }
+      .layer { fill: #ffffff; stroke: #ede9fe; stroke-width: 1.2; filter: url(#sh); }
       .layer-h { font-size: 13px; font-weight: 700; fill: #6d28d9; }
-      .b-h { font-size: 15px; font-weight: 700; fill: #1f2937; }
-      .b-t { font-size: 13px; fill: #4b5563; }
+      .b-h { font-size: 15px; font-weight: 700; fill: #1e293b; }
+      .b-t { font-size: 13px; fill: #475569; }
       .code { font-family: Consolas, 'Courier New', monospace; font-size: 12.5px; fill: #374151; }
-      .flow { stroke: #4b5563; stroke-width: 2; fill: none; }
+      .flow { stroke: #94a3b8; stroke-width: 2; fill: none; }
       .flow-p { stroke: #6d28d9; stroke-width: 2; fill: none; }
       .flow-d { stroke: #9ca3af; stroke-width: 1.6; fill: none; stroke-dasharray: 6 5; }
       .lbl { font-size: 13px; fill: #1f2937; }
       .lbl-bg { fill: #ffffff; }
       .num { fill: #6d28d9; }
       .num-t { font-size: 13px; font-weight: 700; fill: #ffffff; }
-      .db { fill: #eff6ff; stroke: #93c5fd; stroke-width: 1.5; }
+      .db { fill: #eff6ff; stroke: #bfdbfe; stroke-width: 1.5; }
     </style>
   </defs>
 
