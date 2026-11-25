@@ -15,38 +15,266 @@
   <a class="button secondary" href="{{ url_for('records') }}">查看歷史情緒紀錄</a>
 </section>
 
-<section class="card">
-  <div class="card-header">
-    <h2>最近的紀錄</h2>
-    {% if total > records|length %}<a href="{{ url_for('records') }}">查看全部 {{ total }} 筆 →</a>{% endif %}
+{# 篩選放在所有統計與圖表的上方，一次控制全部 #}
+<div class="range-bar">
+  <h2>近期統計</h2>
+  <nav class="segmented" aria-label="統計區間">
+    {% for option in range_options %}
+      <a href="{{ url_for('dashboard', days=option) }}"
+         class="{{ 'active' if option == days }}"
+         {% if option == days %}aria-current="page"{% endif %}>最近 {{ option }} 天</a>
+    {% endfor %}
+  </nav>
+</div>
+
+<section class="stat-grid">
+  <div class="stat">
+    <span class="stat-label">總紀錄天數</span>
+    <span class="stat-value">{{ stats.total_records }}<small> 天</small></span>
   </div>
-  {% if records %}
-    <ul class="records">
-      {% for rec in records %}
-        <li>
-          <span class="emoji">{{ rec.emoji }}</span>
-          <div class="record-body">
-            <strong>{{ rec.record_date.strftime('%Y-%m-%d') }}・{{ rec.mood_label }}（{{ rec.mood_score }}/10）</strong>
-            <div class="stats">
-              <span>🔥 壓力 {{ rec.stress_score }}/10</span>
-              <span>😴 {{ '%g' % rec.sleep_hours }} 小時</span>
-              <span>🏃 {{ rec.exercise_minutes }} 分鐘</span>
-            </div>
-            {% if rec.note %}<p>{{ rec.note }}</p>{% endif %}
-          </div>
-          <div class="record-actions">
-            <a href="{{ url_for('edit_record', record_id=rec.id, next=url_for('dashboard')) }}">編輯</a>
-            <form action="{{ url_for('delete_record', record_id=rec.id) }}" method="post"
-                  onsubmit="return confirm('確定要刪除這筆紀錄嗎？')">
-              <input type="hidden" name="next" value="{{ url_for('dashboard') }}">
-              <button type="submit" class="link-button danger">刪除</button>
-            </form>
-          </div>
-        </li>
-      {% endfor %}
-    </ul>
+  <div class="stat">
+    <span class="stat-label">最近 {{ days }} 天有紀錄</span>
+    <span class="stat-value">{{ stats.recent_count }}<small> / {{ days }} 天</small></span>
+  </div>
+  <div class="stat">
+    <span class="stat-label"><i class="key" style="--key: var(--series-mood)"></i>平均心情</span>
+    <span class="stat-value">{{ stats.mood if stats.mood is not none else '—' }}<small> / 10</small></span>
+  </div>
+  <div class="stat">
+    <span class="stat-label"><i class="key" style="--key: var(--series-stress)"></i>平均壓力</span>
+    <span class="stat-value">{{ stats.stress if stats.stress is not none else '—' }}<small> / 10</small></span>
+  </div>
+  <div class="stat">
+    <span class="stat-label"><i class="key" style="--key: var(--series-sleep)"></i>平均睡眠</span>
+    <span class="stat-value">{{ stats.sleep if stats.sleep is not none else '—' }}<small> 小時</small></span>
+  </div>
+  <div class="stat">
+    <span class="stat-label"><i class="key" style="--key: var(--series-exercise)"></i>運動總計</span>
+    <span class="stat-value">{{ stats.exercise_total }}<small> 分鐘</small></span>
+  </div>
+</section>
+
+{% if stats.recent_count %}
+  <section class="card chart-card">
+    <h2>最近 {{ days }} 天心情與壓力趨勢</h2>
+    <p class="chart-sub">分數 1～10・沒有紀錄的日子以虛線連接</p>
+    <div class="chart-box"><canvas id="moodStressChart" role="img"
+      aria-label="最近 {{ days }} 天心情與壓力折線圖"></canvas></div>
+  </section>
+
+  <section class="card chart-card">
+    <h2>最近 {{ days }} 天睡眠趨勢</h2>
+    <p class="chart-sub">小時・虛線為 7 小時參考線</p>
+    <div class="chart-box short"><canvas id="sleepChart" role="img"
+      aria-label="最近 {{ days }} 天睡眠時間折線圖"></canvas></div>
+  </section>
+
+  <section class="card chart-card">
+    <h2>最近 {{ days }} 天運動時間</h2>
+    <p class="chart-sub">分鐘</p>
+    <div class="chart-box short"><canvas id="exerciseChart" role="img"
+      aria-label="最近 {{ days }} 天運動時間長條圖"></canvas></div>
+  </section>
+
+  {% if insights %}
+    <section class="card">
+      <h2>💡 小發現</h2>
+      <ul class="insights">
+        {% for i in insights %}
+          <li>
+            <strong>{{ i.yes_label }}</strong>的日子，平均心情 <strong>{{ i.yes_avg }}</strong>（{{ i.yes_count }} 天）；
+            {{ i.no_label }}的日子是 <strong>{{ i.no_avg }}</strong>（{{ i.no_count }} 天）。
+            {% if i.diff > 0 %}差了 {{ i.diff }} 分，看起來有幫助 👍
+            {% elif i.diff < 0 %}反而低了 {{ '%g' % (-i.diff) }} 分，可能跟其他因素有關 🤔
+            {% else %}兩者差不多。{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+      <p class="hint">天數少時只是參考，不代表因果關係。</p>
+    </section>
+  {% endif %}
+
+  <p class="switch"><a href="{{ url_for('records') }}">用表格查看每一天的數值 →</a></p>
+{% else %}
+  <section class="card">
+    <p class="empty">最近 {{ days }} 天沒有紀錄，目前沒有足夠資料可以顯示圖表。</p>
+  </section>
+{% endif %}
+
+<section class="card">
+  <h2>最近一筆紀錄</h2>
+  {% if latest_record %}
+    {% set rec = latest_record %}
+    <div class="latest">
+      <span class="emoji">{{ rec.emoji }}</span>
+      <div class="record-body">
+        <strong>{{ rec.record_date.strftime('%Y-%m-%d') }}・{{ rec.mood_label }}（{{ rec.mood_score }}/10）</strong>
+        <div class="stats">
+          <span>🔥 壓力 {{ rec.stress_score }}/10</span>
+          <span>😴 {{ '%g' % rec.sleep_hours }} 小時</span>
+          <span>🏃 {{ rec.exercise_minutes }} 分鐘</span>
+        </div>
+        <p>{{ rec.note or "沒有備註" }}</p>
+      </div>
+      <a href="{{ url_for('edit_record', record_id=rec.id, next=url_for('dashboard')) }}">編輯</a>
+    </div>
   {% else %}
-    <p class="empty">還沒有任何紀錄，點上面的「新增每日情緒紀錄」開始吧！</p>
+    <p class="empty">目前還沒有情緒紀錄。</p>
   {% endif %}
 </section>
+
+{% if stats.recent_count %}
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<script>
+(() => {
+  const data = {{ chart | tojson }};
+  const css = getComputedStyle(document.documentElement);
+  const v = (name) => css.getPropertyValue(name).trim();
+  const color = {
+    mood: v('--series-mood'), stress: v('--series-stress'),
+    sleep: v('--series-sleep'), exercise: v('--series-exercise'),
+    text: v('--text-secondary'), grid: v('--grid'), surface: v('--surface-1'),
+  };
+
+  Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+  Chart.defaults.color = color.text;
+
+  // 共用：tooltip 跟著游標整欄顯示、細格線、沒資料的日子用虛線連接
+  const dashGap = { borderDash: (ctx) => (ctx.p0.skip || ctx.p1.skip ? [4, 4] : undefined) };
+  const tooltipTitle = (items) => data.dates[items[0].dataIndex];
+  const baseOptions = (yOptions) => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    layout: { padding: { right: 56 } },
+    scales: {
+      x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkipPadding: 12 } },
+      y: { ...yOptions, grid: { color: color.grid, lineWidth: 1 }, border: { display: false } },
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { title: tooltipTitle } },
+    },
+  });
+
+  // 折線末端直接標「名稱 + 數值」：文字用中性色，顏色只畫在小色塊上
+  const endLabels = {
+    id: 'endLabels',
+    afterDatasetsDraw(chart) {
+      const { ctx } = chart;
+      chart.data.datasets.forEach((ds, i) => {
+        if (!ds.endLabel) return;
+        const meta = chart.getDatasetMeta(i);
+        const idx = ds.data.map((x) => x !== null).lastIndexOf(true);
+        if (idx < 0) return;
+        const pt = meta.data[idx];
+        ctx.save();
+        ctx.fillStyle = ds.borderColor;
+        ctx.fillRect(pt.x + 8, pt.y - 1, 10, 2);
+        ctx.fillStyle = color.text;
+        ctx.font = '12px ' + Chart.defaults.font.family;
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`${ds.endLabel} ${ds.data[idx]}`, pt.x + 22, pt.y + (ds.labelOffset || 0));
+        ctx.restore();
+      });
+    },
+  };
+
+  // 參考線（睡眠 7 小時）
+  const refLine = (value, label) => ({
+    id: 'refLine',
+    beforeDatasetsDraw(chart) {
+      const { ctx, chartArea, scales } = chart;
+      const y = scales.y.getPixelForValue(value);
+      ctx.save();
+      ctx.strokeStyle = color.text;
+      ctx.globalAlpha = 0.5;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.moveTo(chartArea.left, y); ctx.lineTo(chartArea.right, y); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = color.text;
+      ctx.font = '11px ' + Chart.defaults.font.family;
+      ctx.textBaseline = 'middle';
+      ctx.textBaseline = 'top';
+      ctx.fillText(label, chartArea.left + 12, y + 4);
+      ctx.restore();
+    },
+  });
+
+  const line = (label, values, c, extra = {}) => ({
+    label, data: values, borderColor: c, backgroundColor: c,
+    borderWidth: 2, cubicInterpolationMode: 'monotone', spanGaps: true, segment: dashGap,
+    pointRadius: 4, pointHoverRadius: 6, pointBorderColor: color.surface, pointBorderWidth: 2,
+    ...extra,
+  });
+
+  // 心情與壓力：同一個 1～10 量尺，共用一條軸
+  const lastMood = data.mood.filter((x) => x !== null).at(-1);
+  const lastStress = data.stress.filter((x) => x !== null).at(-1);
+  const close = Math.abs(lastMood - lastStress) <= 1;
+  new Chart(document.getElementById('moodStressChart'), {
+    type: 'line',
+    data: {
+      labels: data.labels,
+      datasets: [
+        line('心情分數', data.mood, color.mood,
+          { endLabel: '心情', labelOffset: close ? (lastMood >= lastStress ? -8 : 8) : 0 }),
+        line('壓力分數', data.stress, color.stress,
+          { endLabel: '壓力', labelOffset: close ? (lastStress > lastMood ? -8 : 8) : 0 }),
+      ],
+    },
+    options: (() => {
+      const o = baseOptions({ min: 0, max: 10, ticks: { stepSize: 2 } });
+      o.plugins.legend = {
+        display: true, position: 'top', align: 'start',
+        labels: {
+          boxWidth: 14, boxHeight: 3,
+          generateLabels: (chart) => chart.data.datasets.map((ds, i) => ({
+            text: ds.label, fillStyle: ds.borderColor, strokeStyle: ds.borderColor,
+            lineWidth: 0, fontColor: color.text, datasetIndex: i,
+            hidden: !chart.isDatasetVisible(i),
+          })),
+        },
+      };
+      return o;
+    })(),
+    plugins: [endLabels],
+  });
+
+  // 睡眠：單一系列，標題已說明，不需要圖例
+  new Chart(document.getElementById('sleepChart'), {
+    type: 'line',
+    data: {
+      labels: data.labels,
+      datasets: [line('睡眠時間（小時）', data.sleep, color.sleep, { endLabel: '睡眠' })],
+    },
+    options: baseOptions({
+      beginAtZero: true,
+      suggestedMax: 10,
+      ticks: { stepSize: 2 },
+    }),
+    plugins: [endLabels, refLine(7, '7 小時')],
+  });
+
+  // 運動：每天的量，用長條圖
+  new Chart(document.getElementById('exerciseChart'), {
+    type: 'bar',
+    data: {
+      labels: data.labels,
+      datasets: [{
+        label: '運動時間（分鐘）', data: data.exercise,
+        backgroundColor: color.exercise, maxBarThickness: 24,
+        borderRadius: { topLeft: 4, topRight: 4 }, borderSkipped: 'bottom',
+      }],
+    },
+    options: (() => {
+      const o = baseOptions({ beginAtZero: true, ticks: { precision: 0 } });
+      o.layout.padding.right = 8;
+      return o;
+    })(),
+  });
+})();
+</script>
+{% endif %}
 {% endblock %}

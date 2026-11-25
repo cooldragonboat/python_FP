@@ -5,7 +5,7 @@
 
 import os
 import re
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from flask import Flask, flash, redirect, render_template, request, url_for
@@ -217,19 +217,100 @@ def logout():
     return redirect(url_for("index"))
 
 
+RANGE_OPTIONS = (7, 30, 90)
+
+
+def _average(values):
+    values = [v for v in values if v is not None]
+    return round(sum(values) / len(values), 1) if values else None
+
+
+def _compare(records, condition, yes_label, no_label):
+    """比較符合 / 不符合條件的日子，平均心情差多少；兩組都要有資料才回傳。"""
+    yes = [r.mood_score for r in records if condition(r)]
+    no = [r.mood_score for r in records if not condition(r)]
+    if not yes or not no:
+        return None
+    return {
+        "yes_label": yes_label,
+        "no_label": no_label,
+        "yes_avg": _average(yes),
+        "no_avg": _average(no),
+        "yes_count": len(yes),
+        "no_count": len(no),
+        "diff": round(_average(yes) - _average(no), 1),
+    }
+
+
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    records = (
-        MoodRecord.query.filter_by(user_id=current_user.id)
-        .order_by(MoodRecord.record_date.desc())
-        .limit(5)
+    days = request.args.get("days", type=int)
+    if days not in RANGE_OPTIONS:
+        days = 7  # 預設最近 7 天（今天 + 過去 6 天）
+    today = date.today()
+    start = today - timedelta(days=days - 1)
+
+    # 只查目前使用者的資料
+    user_records = MoodRecord.query.filter_by(user_id=current_user.id)
+    latest_record = user_records.order_by(MoodRecord.record_date.desc()).first()
+    today_record = (
+        latest_record
+        if latest_record and latest_record.record_date == today
+        else None
+    )
+    total_records = user_records.count()
+
+    # 區間內的紀錄（給圖表與統計用）
+    in_range = (
+        MoodRecord.query.filter(
+            MoodRecord.user_id == current_user.id,
+            MoodRecord.record_date >= start,
+            MoodRecord.record_date <= today,
+        )
+        .order_by(MoodRecord.record_date)
         .all()
     )
-    today_record = next((r for r in records if r.record_date == date.today()), None)
-    total = MoodRecord.query.filter_by(user_id=current_user.id).count()
+    by_date = {r.record_date: r for r in in_range}
+
+    # 每天一格，沒紀錄的日子是 None → 圖上留空，不假裝有資料
+    chart = {"labels": [], "dates": [], "mood": [], "stress": [], "sleep": [], "exercise": []}
+    for offset in range(days):
+        day = start + timedelta(days=offset)
+        r = by_date.get(day)
+        chart["labels"].append(f"{day.month}/{day.day}")
+        chart["dates"].append(day.isoformat())
+        chart["mood"].append(r.mood_score if r else None)
+        chart["stress"].append(r.stress_score if r else None)
+        chart["sleep"].append(r.sleep_hours if r else None)
+        chart["exercise"].append(r.exercise_minutes if r else None)
+
+    stats = {
+        "total_records": total_records,
+        "recent_count": len(in_range),
+        "mood": _average([r.mood_score for r in in_range]),
+        "stress": _average([r.stress_score for r in in_range]),
+        "sleep": _average([r.sleep_hours for r in in_range]),
+        "exercise_total": sum(r.exercise_minutes for r in in_range),
+    }
+    insights = [
+        i
+        for i in (
+            _compare(in_range, lambda r: r.sleep_hours >= 7, "睡滿 7 小時", "睡不到 7 小時"),
+            _compare(in_range, lambda r: r.exercise_minutes > 0, "有運動", "沒運動"),
+        )
+        if i
+    ]
+
     return render_template(
-        "dashboard.html", records=records, today_record=today_record, total=total
+        "dashboard.html",
+        latest_record=latest_record,
+        today_record=today_record,
+        days=days,
+        range_options=RANGE_OPTIONS,
+        chart=chart,
+        stats=stats,
+        insights=insights,
     )
 
 
