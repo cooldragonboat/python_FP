@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Environment variables
+.env
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+
+# Operating system
+.DS_Store
+Thumbs.db
