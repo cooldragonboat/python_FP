@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}資料分析 - MoodTrack{% endblock %}
+{% block content %}
+<h1 class="page-title">資料分析</h1>
+<p class="welcome">從 {{ total }} 筆紀錄裡，看看自己的生活模式。</p>
+
+{% if not total %}
+  <section class="card">
+    <p class="empty">目前還沒有任何情緒紀錄，新增幾天之後再回來看分析吧！</p>
+    <a class="button" href="{{ url_for('new_record') }}">新增每日情緒紀錄</a>
+  </section>
+{% else %}
+
+<section class="card">
+  <h2>平均值比較</h2>
+  <div class="table-wrap">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>期間</th>
+          <th><i class="key" style="--key: var(--series-mood)"></i> 心情</th>
+          <th><i class="key" style="--key: var(--series-stress)"></i> 壓力</th>
+          <th><i class="key" style="--key: var(--series-sleep)"></i> 睡眠</th>
+          <th><i class="key" style="--key: var(--series-exercise)"></i> 運動</th>
+          <th>天數</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for name, s in periods %}
+          <tr>
+            <th scope="row">{{ name }}</th>
+            {% if s %}
+              <td>{{ s.mood }} / 10</td>
+              <td>{{ s.stress }} / 10</td>
+              <td>{{ s.sleep }} 小時</td>
+              <td>{{ s.exercise }} 分鐘</td>
+              <td>{{ s.count }} 天</td>
+            {% else %}
+              <td colspan="5" class="muted">這段期間沒有紀錄</td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="card">
+  <h2>最高與最低紀錄</h2>
+  <ul class="extremes">
+    {% for icon, label, rec, kind in extremes %}
+      <li>
+        <span class="extreme-icon">{{ icon }}</span>
+        <div>
+          <span class="extreme-label">{{ label }}</span>
+          <strong>
+            {{ rec.record_date.strftime('%Y-%m-%d') }}・
+            {% if kind == 'mood' %}心情 {{ rec.mood_score }}/10
+            {% elif kind == 'stress' %}壓力 {{ rec.stress_score }}/10
+            {% else %}睡眠 {{ '%g' % rec.sleep_hours }} 小時{% endif %}
+          </strong>
+          {% if rec.note %}<p>「{{ rec.note }}」</p>{% endif %}
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+  <p class="hint">同分時顯示最近的一天。</p>
+</section>
+
+<section class="card">
+  <h2>運動與壓力比較</h2>
+  {% set w = exercise_compare.with %}{% set wo = exercise_compare.without %}
+  {% if w and wo %}
+    <div class="compare-pair">
+      <div class="stat">
+        <span class="stat-label">🏃 有運動的日子（{{ w.count }} 天）</span>
+        <span class="stat-value">{{ w.stress }}<small> / 10 平均壓力</small></span>
+        <span class="stat-label">平均心情 {{ w.mood }}</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">🛋️ 沒運動的日子（{{ wo.count }} 天）</span>
+        <span class="stat-value">{{ wo.stress }}<small> / 10 平均壓力</small></span>
+        <span class="stat-label">平均心情 {{ wo.mood }}</span>
+      </div>
+    </div>
+    {% set diff = (wo.stress - w.stress) | round(1) %}
+    <p class="compare-note">
+      {% if diff > 0 %}有運動的日子，平均壓力低了 <strong>{{ diff }}</strong> 分。
+      {% elif diff < 0 %}有運動的日子，平均壓力反而高了 <strong>{{ -diff }}</strong> 分。
+      {% else %}兩種日子的平均壓力一樣。{% endif %}
+    </p>
+  {% else %}
+    <p class="empty">需要同時有「有運動」和「沒運動」的紀錄才能比較。</p>
+  {% endif %}
+  <p class="hint">⚠️ 這只代表資料中的差異，不能直接證明運動造成壓力下降。</p>
+</section>
+
+<section class="card chart-card">
+  <h2>睡眠與心情</h2>
+  <p class="chart-sub">每個點是一天・橫軸睡眠時間、縱軸心情分數
+    {% if correlation is not none %}・相關係數 r = {{ correlation }}
+      （{% if correlation >= 0.5 %}明顯正相關{% elif correlation >= 0.2 %}有點正相關{% elif correlation > -0.2 %}看不太出關係{% elif correlation > -0.5 %}有點負相關{% else %}明顯負相關{% endif %}）
+    {% endif %}
+  </p>
+  <div class="chart-box"><canvas id="sleepMoodChart" role="img" aria-label="睡眠時間與心情分數散佈圖"></canvas></div>
+  <p class="hint">相關不等於因果；點越多，參考價值越高。</p>
+</section>
+
+<p class="switch"><a href="{{ url_for('records') }}">用表格查看每一天的數值 →</a></p>
+
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<script>
+(() => {
+  const points = {{ scatter | tojson }};
+  const css = getComputedStyle(document.documentElement);
+  const v = (name) => css.getPropertyValue(name).trim();
+  Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+  Chart.defaults.color = v('--text-secondary');
+  new Chart(document.getElementById('sleepMoodChart'), {
+    type: 'scatter',
+    data: {
+      datasets: [{
+        label: '每日紀錄', data: points,
+        backgroundColor: v('--series-mood'), borderColor: v('--surface-1'), borderWidth: 2,
+        pointRadius: 6, pointHoverRadius: 8,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { title: { display: true, text: '睡眠時間（小時）' }, suggestedMin: 0, suggestedMax: 10,
+             grid: { color: v('--grid') }, border: { display: false } },
+        y: { title: { display: true, text: '心情分數' }, min: 0, max: 10, ticks: { stepSize: 2 },
+             grid: { color: v('--grid') }, border: { display: false } },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          title: (items) => items[0].raw.date,
+          label: (item) => `睡眠 ${item.raw.x} 小時・心情 ${item.raw.y}/10`,
+        } },
+      },
+    },
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

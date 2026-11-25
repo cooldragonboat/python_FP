@@ -2,7 +2,44 @@
 {% block title %}歷史紀錄 - MoodTrack{% endblock %}
 {% block content %}
 <h1 class="page-title">歷史情緒紀錄</h1>
-<p class="welcome">{{ current_user.username }} 的所有紀錄{% if records %}，共 {{ records|length }} 筆，依日期由新到舊排列{% endif %}。</p>
+<p class="welcome">
+  {% if filtering %}符合條件的紀錄 {{ records|length }} 筆（全部 {{ total }} 筆），依日期由新到舊排列。
+  {% else %}{{ current_user.username }} 的所有紀錄{% if records %}，共 {{ records|length }} 筆，依日期由新到舊排列{% endif %}。{% endif %}
+</p>
+
+<form class="card filters" method="get" action="{{ url_for('records') }}">
+  <div class="filter-grid">
+    <label for="start">開始日期
+      <input type="date" id="start" name="start" value="{{ filters.start }}" max="{{ today_iso }}">
+    </label>
+    <label for="end">結束日期
+      <input type="date" id="end" name="end" value="{{ filters.end }}" max="{{ today_iso }}">
+    </label>
+    <label for="min_mood">最低心情分數
+      <select id="min_mood" name="min_mood">
+        <option value="">不限</option>
+        {% for n in range(1, 11) %}<option value="{{ n }}" {% if filters.min_mood == n %}selected{% endif %}>{{ n }} 分以上</option>{% endfor %}
+      </select>
+    </label>
+    <label for="min_stress">最低壓力分數
+      <select id="min_stress" name="min_stress">
+        <option value="">不限</option>
+        {% for n in range(1, 11) %}<option value="{{ n }}" {% if filters.min_stress == n %}selected{% endif %}>{{ n }} 分以上</option>{% endfor %}
+      </select>
+    </label>
+    <label for="max_stress">最高壓力分數
+      <select id="max_stress" name="max_stress">
+        <option value="">不限</option>
+        {% for n in range(1, 11) %}<option value="{{ n }}" {% if filters.max_stress == n %}selected{% endif %}>{{ n }} 分以下</option>{% endfor %}
+      </select>
+    </label>
+  </div>
+  <div class="filter-actions">
+    <button type="submit" class="button">篩選</button>
+    {% if filtering %}<a class="button secondary" href="{{ url_for('records') }}">清除條件</a>{% endif %}
+  </div>
+  <p class="hint">例如：開始 2026-11-01、結束 2026-11-25；或「最低壓力 7 分以上」找出壓力大的日子。</p>
+</form>
 
 <section class="card">
   {% if records %}
@@ -42,8 +79,12 @@
       </table>
     </div>
   {% else %}
-    <p class="empty">目前還沒有任何情緒紀錄。</p>
-    <a class="button" href="{{ url_for('new_record') }}">新增第一筆紀錄</a>
+    {% if filtering %}
+      <p class="empty">沒有符合條件的紀錄，試著放寬篩選條件。</p>
+    {% else %}
+      <p class="empty">目前還沒有任何情緒紀錄。</p>
+      <a class="button" href="{{ url_for('new_record') }}">新增第一筆紀錄</a>
+    {% endif %}
   {% endif %}
 </section>
 
