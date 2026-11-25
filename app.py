@@ -233,7 +233,7 @@ def dashboard():
     )
 
 
-def _parse_record_form(form):
+def _parse_record_form(form, format_error="請確認日期、分數與時間格式正確。"):
     """檢查每日紀錄表單，回傳 (資料 dict, 錯誤訊息)；成功時錯誤訊息為 None。"""
     record_date_text = form.get("record_date", "").strip()
     mood_score_text = form.get("mood_score", "").strip()
@@ -260,7 +260,7 @@ def _parse_record_form(form):
         sleep_hours = float(sleep_hours_text)
         exercise_minutes = int(exercise_minutes_text)
     except ValueError:
-        return None, "請確認日期、分數與時間格式正確。"
+        return None, format_error
 
     if record_date > date.today():
         return None, "紀錄日期不能是未來的日期。"
@@ -337,9 +337,11 @@ def edit_record(record_id: int):
     ).first_or_404()
 
     if request.method == "POST":
-        data, error = _parse_record_form(request.form)
+        data, error = _parse_record_form(
+            request.form, format_error="請確認所有資料格式正確。"
+        )
         if error is None and _date_taken(data["record_date"], exclude_id=record.id):
-            error = "這一天已經有紀錄，請選擇其他日期。"
+            error = "這一天已經有其他紀錄。"
 
         if error:
             flash(error, "error")
@@ -353,8 +355,8 @@ def edit_record(record_id: int):
         for key, value in data.items():
             setattr(record, key, value)
         db.session.commit()
-        flash("情緒紀錄已更新。", "success")
-        return redirect(_safe_next(request.args.get("next")) or url_for("dashboard"))
+        flash("情緒紀錄更新成功。", "success")
+        return redirect(_safe_next(request.args.get("next")) or url_for("records"))
 
     values = {
         "record_date": record.record_date.isoformat(),
@@ -372,12 +374,16 @@ def edit_record(record_id: int):
 @app.post("/records/<int:record_id>/delete")
 @login_required
 def delete_record(record_id: int):
-    record = MoodRecord.query.filter_by(id=record_id, user_id=current_user.id).first()
-    if record:
-        db.session.delete(record)
-        db.session.commit()
-        flash("情緒紀錄已刪除。", "success")
-    return redirect(_safe_next(request.form.get("next")) or url_for("dashboard"))
+    # 只找得到自己的紀錄；改網址刪別人的會得到 404
+    record = MoodRecord.query.filter_by(
+        id=record_id, user_id=current_user.id
+    ).first_or_404()
+
+    db.session.delete(record)
+    db.session.commit()
+
+    flash("情緒紀錄已刪除。", "success")
+    return redirect(_safe_next(request.form.get("next")) or url_for("records"))
 
 
 if __name__ == "__main__":

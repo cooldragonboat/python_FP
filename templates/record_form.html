@@ -42,8 +42,10 @@
               placeholder="記錄今天發生的事情或你的感受...">{{ values.get('note', '') }}</textarea>
   </label>
 
-  <button type="submit" class="button">儲存紀錄</button>
-  <p class="switch"><a href="{{ url_for('dashboard') }}">回到儀表板</a></p>
+  <button type="submit" class="button">{{ '更新紀錄' if record else '儲存紀錄' }}</button>
+  <p class="switch">
+    {% if record %}<a href="{{ url_for('records') }}">回到歷史紀錄</a>・{% endif %}<a href="{{ url_for('dashboard') }}">回到儀表板</a>
+  </p>
 </form>
 
 <script>
