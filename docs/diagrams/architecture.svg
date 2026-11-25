@@ -1,0 +1,181 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 860" width="1240" height="860"
+     font-family="'Microsoft JhengHei','Noto Sans TC','PingFang TC','WenQuanYi Zen Hei',sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4b5563"/>
+    </marker>
+    <marker id="arrowP" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6d28d9"/>
+    </marker>
+    <style>
+      .title { font-size: 26px; font-weight: 700; fill: #1f2937; }
+      .sub { font-size: 14px; fill: #6b7280; }
+      .zone { fill: #f9fafb; stroke: #d1d5db; stroke-width: 1.5; }
+      .zone-flask { fill: #faf5ff; stroke: #c4b5fd; stroke-width: 1.5; }
+      .zone-h { font-size: 18px; font-weight: 700; fill: #1f2937; }
+      .zone-s { font-size: 13px; fill: #6b7280; }
+      .box { fill: #ffffff; stroke: #d1d5db; stroke-width: 1.2; }
+      .layer { fill: #ffffff; stroke: #ddd6fe; stroke-width: 1.2; }
+      .layer-h { font-size: 13px; font-weight: 700; fill: #6d28d9; }
+      .b-h { font-size: 15px; font-weight: 700; fill: #1f2937; }
+      .b-t { font-size: 13px; fill: #4b5563; }
+      .code { font-family: Consolas, 'Courier New', monospace; font-size: 12.5px; fill: #374151; }
+      .flow { stroke: #4b5563; stroke-width: 2; fill: none; }
+      .flow-p { stroke: #6d28d9; stroke-width: 2; fill: none; }
+      .flow-d { stroke: #9ca3af; stroke-width: 1.6; fill: none; stroke-dasharray: 6 5; }
+      .lbl { font-size: 13px; fill: #1f2937; }
+      .lbl-bg { fill: #ffffff; }
+      .num { fill: #6d28d9; }
+      .num-t { font-size: 13px; font-weight: 700; fill: #ffffff; }
+      .db { fill: #eff6ff; stroke: #93c5fd; stroke-width: 1.5; }
+    </style>
+  </defs>
+
+  <rect width="1240" height="860" fill="#ffffff"/>
+  <text x="40" y="52" class="title">MoodTrack 系統架構圖</text>
+  <text x="40" y="78" class="sub">三層架構：瀏覽器（呈現與互動）→ Flask（路由、權限、運算）→ SQLite（資料儲存）</text>
+
+  <!-- ============ 使用者端 ============ -->
+  <rect x="40" y="110" width="250" height="560" rx="14" class="zone"/>
+  <text x="60" y="142" class="zone-h">使用者端（瀏覽器）</text>
+  <text x="60" y="162" class="zone-s">電腦、手機皆可使用</text>
+
+  <rect x="58" y="182" width="214" height="92" rx="10" class="box"/>
+  <text x="74" y="208" class="b-h">HTML 頁面</text>
+  <text x="74" y="230" class="b-t">由 Jinja2 模板產生</text>
+  <text x="74" y="250" class="b-t">首頁、儀表板、歷史紀錄、</text>
+  <text x="74" y="268" class="b-t">資料分析、表單頁</text>
+
+  <rect x="58" y="288" width="214" height="74" rx="10" class="box"/>
+  <text x="74" y="314" class="b-h">CSS 樣式</text>
+  <text x="74" y="336" class="code">static/style.css</text>
+  <text x="74" y="354" class="b-t">響應式排版（手機版）</text>
+
+  <rect x="58" y="376" width="214" height="92" rx="10" class="box"/>
+  <text x="74" y="402" class="b-h">Chart.js 4.4.1</text>
+  <text x="74" y="424" class="b-t">折線圖：心情、壓力、睡眠</text>
+  <text x="74" y="444" class="b-t">長條圖：運動</text>
+  <text x="74" y="462" class="b-t">散佈圖：睡眠 × 心情</text>
+
+  <rect x="58" y="482" width="214" height="92" rx="10" class="box"/>
+  <text x="74" y="508" class="b-h">前端互動與驗證</text>
+  <text x="74" y="530" class="b-t">required、min／max 欄位檢查</text>
+  <text x="74" y="550" class="b-t">心情滑桿即時換表情</text>
+  <text x="74" y="568" class="b-t">刪除前確認視窗</text>
+
+  <rect x="58" y="588" width="214" height="64" rx="10" class="box"/>
+  <text x="74" y="614" class="b-h">Session Cookie</text>
+  <text x="74" y="636" class="b-t">保存登入狀態</text>
+
+  <!-- ============ Flask ============ -->
+  <rect x="380" y="110" width="520" height="560" rx="14" class="zone-flask"/>
+  <text x="400" y="142" class="zone-h">Flask 應用程式（app.py）</text>
+  <text x="400" y="162" class="zone-s">Python 3 ・ Flask 3</text>
+
+  <!-- 路由層 -->
+  <rect x="398" y="178" width="484" height="138" rx="10" class="layer"/>
+  <text x="414" y="200" class="layer-h">路由層（Routes）</text>
+  <text x="414" y="224" class="b-t">帳號</text>
+  <text x="490" y="224" class="code">/register  /login  /logout</text>
+  <text x="414" y="248" class="b-t">紀錄 CRUD</text>
+  <text x="490" y="248" class="code">/records  /records/new</text>
+  <text x="490" y="266" class="code">/records/&lt;id&gt;/edit  /records/&lt;id&gt;/delete</text>
+  <text x="414" y="290" class="b-t">統計分析</text>
+  <text x="490" y="290" class="code">/dashboard  /analysis</text>
+  <text x="414" y="308" class="b-t">錯誤處理</text>
+  <text x="490" y="308" class="code">404  500 → error.html</text>
+
+  <!-- 安全層 -->
+  <rect x="398" y="326" width="484" height="92" rx="10" class="layer"/>
+  <text x="414" y="348" class="layer-h">權限與驗證</text>
+  <text x="414" y="372" class="b-t">Flask-Login：<tspan class="code">@login_required</tspan>、<tspan class="code">current_user</tspan></text>
+  <text x="414" y="392" class="b-t">Werkzeug：密碼雜湊（scrypt），資料庫不存明文</text>
+  <text x="414" y="410" class="b-t">後端驗證：分數 1～10、睡眠 0～24、同日不重複</text>
+
+  <!-- 運算層 -->
+  <rect x="398" y="428" width="484" height="72" rx="10" class="layer"/>
+  <text x="414" y="450" class="layer-h">統計運算</text>
+  <text x="414" y="472" class="b-t">平均值（四捨五入）、最高最低、連續記錄天數、</text>
+  <text x="414" y="490" class="b-t">心情日曆、運動與壓力比較、相關係數</text>
+
+  <!-- 呈現層 -->
+  <rect x="398" y="510" width="484" height="62" rx="10" class="layer"/>
+  <text x="414" y="532" class="layer-h">呈現層：Jinja2 模板（templates/*.html）</text>
+  <text x="414" y="554" class="b-t">base.html 共用版型；圖表資料以 <tspan class="code">| tojson</tspan> 轉成 JSON 傳給 Chart.js</text>
+
+  <!-- 資料存取層 -->
+  <rect x="398" y="582" width="484" height="70" rx="10" class="layer"/>
+  <text x="414" y="604" class="layer-h">資料存取：Flask-SQLAlchemy（ORM）</text>
+  <text x="414" y="626" class="b-t">模型：<tspan class="code">User</tspan>、<tspan class="code">MoodRecord</tspan></text>
+  <text x="414" y="644" class="b-t">每個查詢都加上 <tspan class="code">user_id = current_user.id</tspan>（資料隔離）</text>
+
+  <!-- ============ 資料儲存 ============ -->
+  <rect x="990" y="110" width="210" height="560" rx="14" class="zone"/>
+  <text x="1010" y="142" class="zone-h">資料儲存</text>
+  <text x="1010" y="162" class="zone-s">不上傳到 GitHub</text>
+
+  <!-- SQLite cylinder -->
+  <g transform="translate(1010,470)">
+    <path d="M0,18 v118 a85,18 0 0 0 170,0 v-118" class="db"/>
+    <ellipse cx="85" cy="18" rx="85" ry="18" class="db"/>
+    <text x="85" y="62" text-anchor="middle" class="b-h">SQLite</text>
+    <text x="85" y="84" text-anchor="middle" class="code">moodtrack.db</text>
+    <text x="85" y="110" text-anchor="middle" class="code">users</text>
+    <text x="85" y="130" text-anchor="middle" class="code">mood_records</text>
+  </g>
+
+  <rect x="1008" y="182" width="174" height="140" rx="10" class="box"/>
+  <text x="1024" y="208" class="b-h">靜態檔案 static/</text>
+  <text x="1024" y="232" class="code">style.css</text>
+  <text x="1024" y="252" class="code">logo.svg</text>
+  <text x="1024" y="272" class="code">vendor/</text>
+  <text x="1024" y="290" class="code"> chart.umd.min.js</text>
+  <text x="1024" y="312" class="b-t">由 Flask 提供給瀏覽器</text>
+
+  <rect x="1008" y="340" width="174" height="96" rx="10" class="box"/>
+  <text x="1024" y="366" class="b-h">設定</text>
+  <text x="1024" y="390" class="code">SECRET_KEY</text>
+  <text x="1024" y="410" class="code">DATABASE_URL</text>
+  <text x="1024" y="428" class="b-t">可由環境變數覆蓋</text>
+
+  <!-- ============ 箭頭 ============ -->
+  <!-- ① 請求 -->
+  <path d="M290,250 H380" class="flow" marker-end="url(#arrow)"/>
+  <rect x="300" y="216" width="72" height="22" rx="4" class="lbl-bg"/>
+  <text x="336" y="232" text-anchor="middle" class="lbl">HTTP 請求</text>
+  <text x="336" y="292" text-anchor="middle" class="zone-s">GET／POST</text>
+  <circle cx="335" cy="266" r="11" class="num"/><text x="335" y="271" text-anchor="middle" class="num-t">1</text>
+
+  <!-- ⑤ 回應 -->
+  <path d="M380,540 H290" class="flow-p" marker-end="url(#arrowP)"/>
+  <rect x="298" y="506" width="76" height="22" rx="4" class="lbl-bg"/>
+  <text x="336" y="522" text-anchor="middle" class="lbl">HTML 回應</text>
+  <circle cx="335" cy="556" r="11" class="num"/><text x="335" y="561" text-anchor="middle" class="num-t">5</text>
+
+  <!-- ③④ ORM <-> SQLite -->
+  <path d="M900,604 H1010" class="flow" marker-end="url(#arrow)"/>
+  <path d="M1010,632 H900" class="flow-p" marker-end="url(#arrowP)"/>
+  <circle cx="918" cy="590" r="10" class="num"/><text x="918" y="595" text-anchor="middle" class="num-t">3</text>
+  <text x="934" y="595" class="lbl">SQL 查詢</text>
+  <circle cx="918" cy="650" r="10" class="num"/><text x="918" y="655" text-anchor="middle" class="num-t">4</text>
+  <text x="934" y="655" class="lbl">查詢結果</text>
+
+  <!-- ② 登入檢查（Flask 內部） -->
+  <circle cx="870" cy="348" r="11" class="num"/><text x="870" y="353" text-anchor="middle" class="num-t">2</text>
+
+  <!-- ============ 流程說明 ============ -->
+  <rect x="40" y="694" width="1160" height="140" rx="14" class="zone"/>
+  <text x="60" y="724" class="zone-h">一次請求的處理流程（以開啟儀表板為例）</text>
+  <g class="b-t" font-size="14">
+    <circle cx="70" cy="752" r="11" class="num"/><text x="70" y="757" text-anchor="middle" class="num-t">1</text>
+    <text x="90" y="757" font-size="14" fill="#374151">瀏覽器送出 GET /dashboard（附 Session Cookie）</text>
+    <circle cx="640" cy="752" r="11" class="num"/><text x="640" y="757" text-anchor="middle" class="num-t">2</text>
+    <text x="660" y="757" font-size="14" fill="#374151">Flask-Login 檢查是否登入，未登入導向 /login</text>
+    <circle cx="70" cy="784" r="11" class="num"/><text x="70" y="789" text-anchor="middle" class="num-t">3</text>
+    <text x="90" y="789" font-size="14" fill="#374151">ORM 以 user_id 查詢這位使用者的紀錄</text>
+    <circle cx="640" cy="784" r="11" class="num"/><text x="640" y="789" text-anchor="middle" class="num-t">4</text>
+    <text x="660" y="789" font-size="14" fill="#374151">計算統計、連續天數、心情日曆，套用 Jinja2 模板</text>
+    <circle cx="70" cy="816" r="11" class="num"/><text x="70" y="821" text-anchor="middle" class="num-t">5</text>
+    <text x="90" y="821" font-size="14" fill="#374151">回傳 HTML（圖表資料轉成 JSON 嵌入頁面），瀏覽器載入 Chart.js 畫出趨勢圖</text>
+  </g>
+</svg>
