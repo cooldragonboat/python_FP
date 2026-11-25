@@ -398,16 +398,142 @@ def new_record():
     )
 
 
+def _parse_date(text):
+    try:
+        return date.fromisoformat(text) if text else None
+    except ValueError:
+        return None
+
+
 @app.route("/records")
 @login_required
 def records():
-    """歷史情緒紀錄：只查目前使用者的紀錄，依日期由新到舊。"""
-    user_records = (
+    """歷史情緒紀錄：只查目前使用者的紀錄，依日期由新到舊，可依條件篩選。"""
+    start = _parse_date(request.args.get("start", "").strip())
+    end = _parse_date(request.args.get("end", "").strip())
+    min_mood = request.args.get("min_mood", type=int)
+    max_stress = request.args.get("max_stress", type=int)
+    min_stress = request.args.get("min_stress", type=int)
+
+    query = MoodRecord.query.filter_by(user_id=current_user.id)
+    if start:
+        query = query.filter(MoodRecord.record_date >= start)
+    if end:
+        query = query.filter(MoodRecord.record_date <= end)
+    if min_mood is not None:
+        query = query.filter(MoodRecord.mood_score >= min_mood)
+    if max_stress is not None:
+        query = query.filter(MoodRecord.stress_score <= max_stress)
+    if min_stress is not None:
+        query = query.filter(MoodRecord.stress_score >= min_stress)
+
+    filters = {
+        "start": start.isoformat() if start else "",
+        "end": end.isoformat() if end else "",
+        "min_mood": min_mood,
+        "max_stress": max_stress,
+        "min_stress": min_stress,
+    }
+    filtering = any(v not in ("", None) for v in filters.values())
+    user_records = query.order_by(MoodRecord.record_date.desc()).all()
+    total = (
+        MoodRecord.query.filter_by(user_id=current_user.id).count()
+        if filtering
+        else len(user_records)
+    )
+    return render_template(
+        "records.html",
+        records=user_records,
+        filters=filters,
+        filtering=filtering,
+        total=total,
+    )
+
+
+def _summary(records):
+    """一組紀錄的平均值；沒有資料時回傳 None。"""
+    if not records:
+        return None
+    return {
+        "count": len(records),
+        "mood": _average([r.mood_score for r in records]),
+        "stress": _average([r.stress_score for r in records]),
+        "sleep": _average([r.sleep_hours for r in records]),
+        "exercise": _average([r.exercise_minutes for r in records]),
+    }
+
+
+def _extreme(records, key, highest=True):
+    """最高（或最低）的一天；同分時取最近的一天。"""
+    if not records:
+        return None
+    ordered = sorted(records, key=lambda r: r.record_date, reverse=True)
+    return (max if highest else min)(ordered, key=key)
+
+
+@app.route("/analysis")
+@login_required
+def analysis():
+    """資料分析：不同期間平均、最高最低紀錄、運動與壓力、睡眠與心情。"""
+    all_records = (
         MoodRecord.query.filter_by(user_id=current_user.id)
-        .order_by(MoodRecord.record_date.desc())
+        .order_by(MoodRecord.record_date)
         .all()
     )
-    return render_template("records.html", records=user_records)
+    today = date.today()
+    week_start = today - timedelta(days=6)
+    month_start = today.replace(day=1)
+
+    periods = [
+        ("最近 7 天", _summary([r for r in all_records if week_start <= r.record_date <= today])),
+        (f"本月（{today.month} 月）", _summary([r for r in all_records if month_start <= r.record_date <= today])),
+        ("全部紀錄", _summary(all_records)),
+    ]
+
+    extremes = [
+        ("😄", "心情最高的一天", _extreme(all_records, lambda r: r.mood_score), "mood"),
+        ("😢", "心情最低的一天", _extreme(all_records, lambda r: r.mood_score, highest=False), "mood"),
+        ("🔥", "壓力最高的一天", _extreme(all_records, lambda r: r.stress_score), "stress"),
+        ("😴", "睡眠最長的一天", _extreme(all_records, lambda r: r.sleep_hours), "sleep"),
+        ("🥱", "睡眠最短的一天", _extreme(all_records, lambda r: r.sleep_hours, highest=False), "sleep"),
+    ]
+
+    exercised = [r for r in all_records if r.exercise_minutes > 0]
+    rested = [r for r in all_records if r.exercise_minutes == 0]
+    exercise_compare = {
+        "with": _summary(exercised),
+        "without": _summary(rested),
+    }
+
+    scatter = [
+        {"x": r.sleep_hours, "y": r.mood_score, "date": r.record_date.isoformat()}
+        for r in all_records
+    ]
+
+    return render_template(
+        "analysis.html",
+        total=len(all_records),
+        periods=periods,
+        extremes=extremes,
+        exercise_compare=exercise_compare,
+        scatter=scatter,
+        correlation=_correlation([r.sleep_hours for r in all_records],
+                                 [r.mood_score for r in all_records]),
+    )
+
+
+def _correlation(xs, ys):
+    """皮爾森相關係數；資料少於 3 筆或沒有變化時回傳 None。"""
+    n = len(xs)
+    if n < 3:
+        return None
+    mean_x, mean_y = sum(xs) / n, sum(ys) / n
+    cov = sum((x - mean_x) * (y - mean_y) for x, y in zip(xs, ys))
+    var_x = sum((x - mean_x) ** 2 for x in xs)
+    var_y = sum((y - mean_y) ** 2 for y in ys)
+    if var_x == 0 or var_y == 0:
+        return None
+    return round(cov / (var_x * var_y) ** 0.5, 2)
 
 
 @app.route("/records/<int:record_id>/edit", methods=["GET", "POST"])
