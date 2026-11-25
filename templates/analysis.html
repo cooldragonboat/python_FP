@@ -83,7 +83,7 @@
         <span class="stat-label">平均心情 {{ wo.mood }}</span>
       </div>
     </div>
-    {% set diff = (wo.stress - w.stress) | round(1) %}
+    {% set diff = exercise_compare.stress_diff %}
     <p class="compare-note">
       {% if diff > 0 %}有運動的日子，平均壓力低了 <strong>{{ diff }}</strong> 分。
       {% elif diff < 0 %}有運動的日子，平均壓力反而高了 <strong>{{ -diff }}</strong> 分。

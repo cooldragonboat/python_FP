@@ -12,7 +12,7 @@ MoodTrack 是一套使用 Flask 開發的**個人情緒與壓力紀錄分析平�
 - 資料分析：不同期間平均、最高最低紀錄、運動與壓力比較、睡眠與心情散佈圖
 - 權限控制：每位使用者只能看到、編輯、刪除自己的資料
 - 響應式介面（手機可用）、自訂錯誤頁面
-- 32 項自動化測試（見 [TESTING.md](TESTING.md)）
+- 33 項自動化測試 + 33 項瀏覽器端到端測試（見 [TESTING.md](TESTING.md)）
 
 ## 使用技術
 
@@ -109,7 +109,7 @@ python_FP/
 ├── README.md            # 專案說明
 ├── TESTING.md           # 測試紀錄
 ├── tests/
-│   └── test_app.py      # 自動化測試（32 項）
+│   └── test_app.py      # 自動化測試（33 項）
 ├── templates/
 │   ├── base.html        # 共用版型（導覽列、提示訊息）
 │   ├── index.html       # 首頁

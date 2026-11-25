@@ -5,6 +5,7 @@
 
 import os
 import re
+from decimal import ROUND_HALF_UP, Decimal
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
@@ -223,9 +224,20 @@ def logout():
 RANGE_OPTIONS = (7, 30, 90)
 
 
+def _round1(number):
+    """四捨五入到小數第一位（4.25 → 4.3）。
+
+    Python 內建 round() 會受浮點誤差與「銀行家捨入」影響（round(4.25, 1) 是 4.2），
+    和手算結果不同，所以改用 Decimal 做一般的四捨五入。
+    """
+    # 先收掉浮點誤差（例如 6.8499999999 其實是 6.85）再四捨五入
+    exact = Decimal(str(round(number, 9)))
+    return float(exact.quantize(Decimal("0.1"), rounding=ROUND_HALF_UP))
+
+
 def _average(values):
     values = [v for v in values if v is not None]
-    return round(sum(values) / len(values), 1) if values else None
+    return _round1(sum(values) / len(values)) if values else None
 
 
 def _compare(records, condition, yes_label, no_label):
@@ -241,7 +253,7 @@ def _compare(records, condition, yes_label, no_label):
         "no_avg": _average(no),
         "yes_count": len(yes),
         "no_count": len(no),
-        "diff": round(_average(yes) - _average(no), 1),
+        "diff": _round1(_average(yes) - _average(no)),
     }
 
 
@@ -580,6 +592,10 @@ def analysis():
         "with": _summary(exercised),
         "without": _summary(rested),
     }
+    if exercise_compare["with"] and exercise_compare["without"]:
+        exercise_compare["stress_diff"] = _round1(
+            exercise_compare["without"]["stress"] - exercise_compare["with"]["stress"]
+        )
 
     scatter = [
         {"x": r.sleep_hours, "y": r.mood_score, "date": r.record_date.isoformat()}
