@@ -181,10 +181,10 @@ def register():
             error = "密碼至少需要 6 個字元。"
         elif password != confirm:
             error = "兩次輸入的密碼不一致。"
-        elif User.query.filter_by(username=username).first():
-            error = "這個使用者名稱已經有人使用了。"
-        elif User.query.filter_by(email=email).first():
-            error = "這個電子郵件已經註冊過了。"
+        elif User.query.filter(
+            (User.username == username) | (User.email == email)
+        ).first():
+            error = "使用者名稱或電子郵件已經被使用。"
 
         if error:
             flash(error, "error")
