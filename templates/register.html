@@ -7,6 +7,10 @@
     <input type="text" name="username" minlength="3" maxlength="30" required
            value="{{ request.form.get('username', '') }}" autocomplete="username">
   </label>
+  <label>電子郵件
+    <input type="email" name="email" maxlength="120" required
+           value="{{ request.form.get('email', '') }}" autocomplete="email">
+  </label>
   <label>密碼（至少 6 個字元）
     <input type="password" name="password" minlength="6" required autocomplete="new-password">
   </label>

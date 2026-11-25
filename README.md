@@ -11,9 +11,9 @@
 
 ### 第二階段：使用者系統與每日紀錄 ✅
 - [x] `User`、`MoodRecord` 資料模型
-- [x] 註冊、登入（可勾「記住我」）、登出
+- [x] 註冊（帳號、電子郵件、密碼，註冊後導向登入頁）、登入（帳號或電子郵件皆可，可勾「記住我」）、登出
 - [x] 只有登入的使用者可以進入儀表板
-- [x] 每日情緒紀錄：心情（1～5）、壓力（1～10）、睡眠時數、運動分鐘、心得
+- [x] 每日情緒紀錄：心情（1～10，表情隨分數變化）、壓力（1～10）、睡眠時數、運動分鐘、心得
   - 每人每天一筆，同一天再存會更新；可補記過去的日期、可刪除
 
 ### 之後
@@ -24,8 +24,13 @@
 
 | 資料表 | 欄位 |
 | --- | --- |
-| `User` | `id`、`username`（唯一）、`password_hash`（只存雜湊）、`created_at` |
-| `MoodRecord` | `id`、`user_id`、`date`、`mood`、`stress`、`sleep_hours`、`exercise_minutes`、`note`、`updated_at`（`user_id` + `date` 唯一） |
+| `users`（`User`） | `id` PK、`username`（唯一）、`email`（唯一）、`password_hash`（只存雜湊）、`created_at` |
+| `mood_records`（`MoodRecord`） | `id` PK、`record_date`、`mood_score`（1～10）、`stress_score`（1～10）、`sleep_hours`、`exercise_minutes`、`note`、`created_at`、`user_id` FK（`user_id` + `record_date` 唯一） |
+
+一位使用者擁有多筆情緒紀錄（`User.mood_records`），刪除使用者時會一併刪除其紀錄。
+
+> 從舊版升級時，如果 `moodtrack.db` 裡沒有重要資料，直接刪掉它再執行 `python app.py` 重建即可；
+> `db.create_all()` 只會建立不存在的資料表，不會修改已存在的資料表結構。
 
 ## 環境需求
 
