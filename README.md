@@ -2,12 +2,30 @@
 
 個人情緒與壓力紀錄分析平台——程式設計 Python 課程期末專案，使用 Flask + SQLite。
 
-## 目前進度（第一階段：最小可執行版本）
+## 開發進度
 
-- [x] Flask 網站可以啟動
-- [x] 首頁可以顯示，能選擇心情、寫一句話並記錄
+### 第一階段：最小可執行版本 ✅
+- [x] Flask 網站可以啟動、首頁可以顯示
 - [x] SQLite 資料庫自動建立（專案根目錄的 `moodtrack.db`）
 - [x] 專案提交到 GitHub
+
+### 第二階段：使用者系統與每日紀錄 ✅
+- [x] `User`、`MoodRecord` 資料模型
+- [x] 註冊、登入（可勾「記住我」）、登出
+- [x] 只有登入的使用者可以進入儀表板
+- [x] 每日情緒紀錄：心情（1～5）、壓力（1～10）、睡眠時數、運動分鐘、心得
+  - 每人每天一筆，同一天再存會更新；可補記過去的日期、可刪除
+
+### 之後
+- [ ] 儀表板圖表（心情／壓力趨勢）
+- [ ] AI 情緒分析
+
+## 資料模型
+
+| 資料表 | 欄位 |
+| --- | --- |
+| `User` | `id`、`username`（唯一）、`password_hash`（只存雜湊）、`created_at` |
+| `MoodRecord` | `id`、`user_id`、`date`、`mood`、`stress`、`sleep_hours`、`exercise_minutes`、`note`、`updated_at`（`user_id` + `date` 唯一） |
 
 ## 環境需求
 
@@ -31,14 +49,18 @@ python app.py
 
 ```
 python_FP/
-├── app.py             # Flask 主程式：路由、資料表、啟動點
-├── requirements.txt   # 套件清單（pip install -r 安裝）
+├── app.py               # Flask 主程式：設定、資料模型、路由
+├── requirements.txt     # 套件清單（pip install -r 安裝）
 ├── templates/
-│   └── index.html     # 首頁
+│   ├── base.html        # 共用版型（導覽列、提示訊息）
+│   ├── index.html       # 首頁
+│   ├── register.html    # 註冊
+│   ├── login.html       # 登入
+│   └── dashboard.html   # 儀表板：新增／查看每日紀錄
 ├── static/
-│   └── style.css      # 樣式
-├── moodtrack.db       # 執行後自動產生的 SQLite 資料庫（不提交）
-└── venv/              # 虛擬環境（不提交）
+│   └── style.css        # 樣式
+├── moodtrack.db         # 執行後自動產生的 SQLite 資料庫（不提交）
+└── venv/                # 虛擬環境（不提交）
 ```
 
 ## Git 使用方式

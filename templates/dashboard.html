@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}儀表板 - MoodTrack{% endblock %}
+{% block content %}
+{% set r = today_record %}
+<form class="card" action="{{ url_for('save_record') }}" method="post">
+  <h2>{{ '更新今天的紀錄' if r else '今天過得如何？' }}</h2>
+
+  <label>日期
+    <input type="date" name="date" value="{{ today.isoformat() }}" max="{{ today.isoformat() }}" required>
+  </label>
+
+  <p class="field-title">心情</p>
+  <div class="mood-picker">
+    {% for score, (emoji, label) in moods.items() %}
+      <label class="mood-option">
+        <input type="radio" name="mood" value="{{ score }}" required
+               {% if (r and r.mood == score) or (not r and score == 3) %}checked{% endif %}>
+        <span class="emoji">{{ emoji }}</span>
+        <span class="label">{{ label }}</span>
+      </label>
+    {% endfor %}
+  </div>
+
+  <label>壓力指數：<output id="stress-value">{{ r.stress if r else 5 }}</output> / 10
+    <input type="range" name="stress" min="1" max="10" value="{{ r.stress if r else 5 }}"
+           oninput="document.getElementById('stress-value').value = this.value">
+  </label>
+
+  <div class="row">
+    <label>睡眠（小時）
+      <input type="number" name="sleep_hours" min="0" max="24" step="0.5" value="{{ r.sleep_hours if r else 7 }}">
+    </label>
+    <label>運動（分鐘）
+      <input type="number" name="exercise_minutes" min="0" max="1440" step="5" value="{{ r.exercise_minutes if r else 0 }}">
+    </label>
+  </div>
+
+  <label>今天想說的話
+    <textarea name="note" maxlength="500" rows="3" placeholder="發生了什麼事？（可留空）">{{ r.note if r else '' }}</textarea>
+  </label>
+
+  <button type="submit" class="button">{{ '更新紀錄' if r else '儲存紀錄' }}</button>
+  <p class="hint">同一天重複儲存會覆蓋那天的紀錄。</p>
+</form>
+
+<section class="card">
+  <h2>最近的紀錄</h2>
+  {% if records %}
+    <ul class="records">
+      {% for rec in records %}
+        <li>
+          <span class="emoji">{{ rec.emoji }}</span>
+          <div class="record-body">
+            <strong>{{ rec.date.strftime('%Y-%m-%d') }}・{{ rec.mood_label }}</strong>
+            <div class="stats">
+              <span>🔥 壓力 {{ rec.stress }}/10</span>
+              <span>😴 {{ '%g' % rec.sleep_hours }} 小時</span>
+              <span>🏃 {{ rec.exercise_minutes }} 分鐘</span>
+            </div>
+            {% if rec.note %}<p>{{ rec.note }}</p>{% endif %}
+          </div>
+          <form action="{{ url_for('delete_record', record_id=rec.id) }}" method="post"
+                onsubmit="return confirm('確定要刪除這筆紀錄嗎？')">
+            <button type="submit" class="link-button danger">刪除</button>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty">還沒有任何紀錄，記下第一天吧！</p>
+  {% endif %}
+</section>
+{% endblock %}

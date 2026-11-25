@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}登入 - MoodTrack{% endblock %}
+{% block content %}
+<form class="card auth" method="post">
+  <h2>登入</h2>
+  <label>帳號
+    <input type="text" name="username" required
+           value="{{ request.form.get('username', '') }}" autocomplete="username">
+  </label>
+  <label>密碼
+    <input type="password" name="password" required autocomplete="current-password">
+  </label>
+  <label class="checkbox"><input type="checkbox" name="remember"> 記住我</label>
+  <button type="submit" class="button">登入</button>
+  <p class="switch">還沒有帳號？<a href="{{ url_for('register') }}">註冊</a></p>
+</form>
+{% endblock %}
