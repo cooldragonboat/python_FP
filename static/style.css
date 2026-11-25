@@ -1,0 +1,55 @@
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+  background: linear-gradient(135deg, #fdf2f8, #eef2ff);
+  color: #1f2937;
+  min-height: 100vh;
+}
+
+.container { max-width: 640px; margin: 0 auto; padding: 32px 16px; }
+
+header { text-align: center; margin-bottom: 24px; }
+h1 { margin: 0; font-size: 2.4rem; color: #6d28d9; }
+.tagline { margin: 4px 0 0; font-size: 1.1rem; color: #4c1d95; }
+.subtitle { color: #6b7280; margin-top: 4px; }
+
+.card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 16px rgba(109, 40, 217, 0.08);
+}
+
+h2 { margin-top: 0; font-size: 1.2rem; }
+
+.mood-picker { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 16px; }
+.mood-option { flex: 1; text-align: center; cursor: pointer; }
+.mood-option input { display: none; }
+.mood-option .emoji {
+  display: block; font-size: 2rem; padding: 8px 0;
+  border-radius: 12px; border: 2px solid transparent; transition: all .15s;
+}
+.mood-option .label { font-size: .85rem; color: #6b7280; }
+.mood-option input:checked + .emoji { border-color: #8b5cf6; background: #f5f3ff; transform: scale(1.08); }
+
+.note {
+  width: 100%; padding: 10px 12px; font-size: 1rem;
+  border: 1px solid #d1d5db; border-radius: 10px; margin-bottom: 12px;
+}
+
+button {
+  width: 100%; padding: 12px; font-size: 1rem; font-weight: bold;
+  color: #fff; background: #7c3aed; border: none; border-radius: 10px; cursor: pointer;
+}
+button:hover { background: #6d28d9; }
+
+.entries { list-style: none; padding: 0; margin: 0; }
+.entries li { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f3f4f6; }
+.entries li:last-child { border-bottom: none; }
+.entries .emoji { font-size: 1.8rem; }
+.entries p { margin: 4px 0; }
+.entries time { font-size: .8rem; color: #9ca3af; }
+.empty { color: #9ca3af; text-align: center; }
