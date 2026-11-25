@@ -269,6 +269,12 @@ class DashboardTests(MoodTrackTestCase):
         # 總紀錄天數、最近 7 天紀錄數、平均心情、平均壓力、平均睡眠
         self.assertEqual(self.stat_values(html)[:5], ["4", "3", "7.3", "4.7", "6.8"])
 
+    def test_average_uses_normal_rounding(self):
+        client = self.user_client("testuser")
+        for n, stress in enumerate((5, 4, 2, 6)):  # 平均 4.25
+            self.add_record(client, record_date=day(n), stress_score=stress)
+        self.assertEqual(self.stat_values(self.text(client.get("/dashboard")))[3], "4.3")
+
     def test_latest_record_shown(self):
         client = self.user_client("testuser")
         self.add_record(client, record_date=day(2), note="比較舊")
