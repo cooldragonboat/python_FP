@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}{{ '編輯' if record else '新增' }}情緒紀錄 - MoodTrack{% endblock %}
+{% block content %}
+{% set mood_value = values.get('mood_score') or 6 %}
+{% set stress_value = values.get('stress_score') or 5 %}
+<form class="card" method="post">
+  <h2>{{ '編輯情緒紀錄' if record else '新增每日情緒紀錄' }}</h2>
+
+  <label for="record_date">紀錄日期
+    <input type="date" id="record_date" name="record_date" required
+           value="{{ values.get('record_date', '') }}" max="{{ today_iso }}">
+  </label>
+
+  <label for="mood_score">今日心情分數：<output id="mood-value">{{ mood_value }}</output> / 10
+    <div class="mood-slider">
+      <span id="mood-face" class="mood-face">🙂</span>
+      <input type="range" id="mood_score" name="mood_score" min="1" max="10" value="{{ mood_value }}" required>
+    </div>
+    <span id="mood-label" class="mood-label"></span>
+    <small class="help">1 代表非常低落，10 代表非常愉快</small>
+  </label>
+
+  <label for="stress_score">今日壓力分數：<output id="stress-value">{{ stress_value }}</output> / 10
+    <input type="range" id="stress_score" name="stress_score" min="1" max="10" value="{{ stress_value }}" required
+           oninput="document.getElementById('stress-value').value = this.value">
+    <small class="help">1 代表壓力很低，10 代表壓力很高</small>
+  </label>
+
+  <div class="row">
+    <label for="sleep_hours">睡眠時間（小時）
+      <input type="number" id="sleep_hours" name="sleep_hours" min="0" max="24" step="0.1" required
+             placeholder="例如 7.5" value="{{ values.get('sleep_hours', '') }}">
+    </label>
+    <label for="exercise_minutes">運動時間（分鐘）
+      <input type="number" id="exercise_minutes" name="exercise_minutes" min="0" max="1440" required
+             placeholder="例如 30" value="{{ values.get('exercise_minutes', '') }}">
+    </label>
+  </div>
+
+  <label for="note">今日備註
+    <textarea id="note" name="note" rows="5" maxlength="1000"
+              placeholder="記錄今天發生的事情或你的感受...">{{ values.get('note', '') }}</textarea>
+  </label>
+
+  <button type="submit" class="button">儲存紀錄</button>
+  <p class="switch"><a href="{{ url_for('dashboard') }}">回到儀表板</a></p>
+</form>
+
+<script>
+  // 心情滑桿：分數改變時即時換表情
+  const moodLevels = {{ mood_levels | tojson }};
+  const moodInput = document.getElementById('mood_score');
+  function updateMood() {
+    const score = Number(moodInput.value);
+    const level = moodLevels.find(([low]) => score >= low);
+    document.getElementById('mood-value').value = score;
+    document.getElementById('mood-face').textContent = level[1];
+    document.getElementById('mood-label').textContent = level[2];
+  }
+  moodInput.addEventListener('input', updateMood);
+  updateMood();
+</script>
+{% endblock %}
