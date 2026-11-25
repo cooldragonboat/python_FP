@@ -108,6 +108,11 @@ class MoodRecord(db.Model):
         return mood_face(self.mood_score)[1]
 
 
+@app.context_processor
+def inject_today():
+    return {"today_iso": date.today().isoformat()}
+
+
 @login_manager.user_loader
 def load_user(user_id: str):
     return db.session.get(User, int(user_id))
@@ -122,22 +127,6 @@ with app.app_context():
 # ---------------------------------------------------------------------------
 
 EMAIL_PATTERN = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
-
-
-def _int_in_range(value, low, high):
-    try:
-        number = int(value)
-    except (TypeError, ValueError):
-        return None
-    return number if low <= number <= high else None
-
-
-def _float_in_range(value, low, high):
-    try:
-        number = float(value)
-    except (TypeError, ValueError):
-        return None
-    return number if low <= number <= high else None
 
 
 def _safe_next(target):
@@ -231,60 +220,140 @@ def logout():
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    today_record = MoodRecord.query.filter_by(
-        user_id=current_user.id, record_date=date.today()
-    ).first()
     records = (
         MoodRecord.query.filter_by(user_id=current_user.id)
         .order_by(MoodRecord.record_date.desc())
         .limit(30)
         .all()
     )
+    today_record = next((r for r in records if r.record_date == date.today()), None)
     return render_template(
-        "dashboard.html",
-        mood_levels=MOOD_LEVELS,
-        today=date.today(),
-        today_record=today_record,
-        records=records,
+        "dashboard.html", records=records, today_record=today_record
     )
 
 
-@app.post("/records")
-@login_required
-def save_record():
-    record_date = request.form.get("date") or date.today().isoformat()
+def _parse_record_form(form):
+    """檢查每日紀錄表單，回傳 (資料 dict, 錯誤訊息)；成功時錯誤訊息為 None。"""
+    record_date_text = form.get("record_date", "").strip()
+    mood_score_text = form.get("mood_score", "").strip()
+    stress_score_text = form.get("stress_score", "").strip()
+    sleep_hours_text = form.get("sleep_hours", "").strip()
+    exercise_minutes_text = form.get("exercise_minutes", "").strip()
+    note = form.get("note", "").strip()[:1000]
+
+    if not all(
+        [
+            record_date_text,
+            mood_score_text,
+            stress_score_text,
+            sleep_hours_text,
+            exercise_minutes_text,
+        ]
+    ):
+        return None, "請完整填寫必要欄位。"
+
     try:
-        record_date = date.fromisoformat(record_date)
+        record_date = datetime.strptime(record_date_text, "%Y-%m-%d").date()
+        mood_score = int(mood_score_text)
+        stress_score = int(stress_score_text)
+        sleep_hours = float(sleep_hours_text)
+        exercise_minutes = int(exercise_minutes_text)
     except ValueError:
-        record_date = None
+        return None, "請確認日期、分數與時間格式正確。"
 
-    mood_score = _int_in_range(request.form.get("mood_score"), 1, 10)
-    stress_score = _int_in_range(request.form.get("stress_score"), 1, 10)
-    sleep_hours = _float_in_range(request.form.get("sleep_hours") or 0, 0, 24)
-    exercise_minutes = _int_in_range(request.form.get("exercise_minutes") or 0, 0, 1440)
-    note = request.form.get("note", "").strip()[:500]
+    if record_date > date.today():
+        return None, "紀錄日期不能是未來的日期。"
+    if not 1 <= mood_score <= 10:
+        return None, "心情分數必須介於 1 到 10。"
+    if not 1 <= stress_score <= 10:
+        return None, "壓力分數必須介於 1 到 10。"
+    if not 0 <= sleep_hours <= 24:
+        return None, "睡眠時間必須介於 0 到 24 小時。"
+    if not 0 <= exercise_minutes <= 1440:
+        return None, "運動時間必須介於 0 到 1440 分鐘。"
 
-    if record_date is None or record_date > date.today():
-        flash("日期不正確（不能選未來的日期）。", "error")
-    elif None in (mood_score, stress_score, sleep_hours, exercise_minutes):
-        flash("請確認心情、壓力、睡眠與運動欄位都填寫正確。", "error")
-    else:
-        record = MoodRecord.query.filter_by(
-            user_id=current_user.id, record_date=record_date
-        ).first()
-        is_new = record is None
-        if is_new:
-            record = MoodRecord(user_id=current_user.id, record_date=record_date)
-            db.session.add(record)
-        record.mood_score = mood_score
-        record.stress_score = stress_score
-        record.sleep_hours = sleep_hours
-        record.exercise_minutes = exercise_minutes
-        record.note = note or None
+    return {
+        "record_date": record_date,
+        "mood_score": mood_score,
+        "stress_score": stress_score,
+        "sleep_hours": sleep_hours,
+        "exercise_minutes": exercise_minutes,
+        "note": note or None,
+    }, None
+
+
+def _date_taken(record_date, exclude_id=None):
+    """這位使用者在這一天是否已經有其他紀錄。"""
+    query = MoodRecord.query.filter_by(user_id=current_user.id, record_date=record_date)
+    if exclude_id is not None:
+        query = query.filter(MoodRecord.id != exclude_id)
+    return query.first() is not None
+
+
+@app.route("/records/new", methods=["GET", "POST"])
+@login_required
+def new_record():
+    if request.method == "POST":
+        data, error = _parse_record_form(request.form)
+        if error is None and _date_taken(data["record_date"]):
+            error = "這一天已經有紀錄，請選擇其他日期。"
+
+        if error:
+            flash(error, "error")
+            return render_template(
+                "record_form.html", values=request.form, mood_levels=MOOD_LEVELS
+            )
+
+        db.session.add(MoodRecord(user_id=current_user.id, **data))
         db.session.commit()
-        flash("紀錄已新增！" if is_new else "已更新這一天的紀錄。", "success")
+        flash("情緒紀錄新增成功。", "success")
+        return redirect(url_for("dashboard"))
 
-    return redirect(url_for("dashboard"))
+    return render_template(
+        "record_form.html",
+        values={"record_date": date.today().isoformat()},
+        mood_levels=MOOD_LEVELS,
+    )
+
+
+@app.route("/records/<int:record_id>/edit", methods=["GET", "POST"])
+@login_required
+def edit_record(record_id: int):
+    record = MoodRecord.query.filter_by(
+        id=record_id, user_id=current_user.id
+    ).first_or_404()
+
+    if request.method == "POST":
+        data, error = _parse_record_form(request.form)
+        if error is None and _date_taken(data["record_date"], exclude_id=record.id):
+            error = "這一天已經有紀錄，請選擇其他日期。"
+
+        if error:
+            flash(error, "error")
+            return render_template(
+                "record_form.html",
+                values=request.form,
+                record=record,
+                mood_levels=MOOD_LEVELS,
+            )
+
+        for key, value in data.items():
+            setattr(record, key, value)
+        db.session.commit()
+        flash("情緒紀錄已更新。", "success")
+        return redirect(url_for("dashboard"))
+
+    values = {
+        "record_date": record.record_date.isoformat(),
+        "mood_score": record.mood_score,
+        "stress_score": record.stress_score,
+        "sleep_hours": "%g" % record.sleep_hours,
+        "exercise_minutes": record.exercise_minutes,
+        "note": record.note or "",
+    }
+    return render_template(
+        "record_form.html", values=values, record=record, mood_levels=MOOD_LEVELS
+    )
 
 
 @app.post("/records/<int:record_id>/delete")
@@ -294,7 +363,7 @@ def delete_record(record_id: int):
     if record:
         db.session.delete(record)
         db.session.commit()
-        flash("紀錄已刪除。", "success")
+        flash("情緒紀錄已刪除。", "success")
     return redirect(url_for("dashboard"))
 
 

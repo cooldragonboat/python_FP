@@ -107,6 +107,13 @@ input[type=range] { width: 100%; margin-top: 8px; accent-color: #7c3aed; }
 .record-body p { margin: 6px 0 0; }
 .stats { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: .85rem; color: #6b7280; margin-top: 4px; }
 .empty { color: #9ca3af; text-align: center; }
+.record-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; font-size: .85rem; }
+.record-actions a { text-decoration: none; }
+.record-actions form { margin: 0; }
+
+.today p { margin-top: 0; }
+.today .button + .button { margin-top: 10px; }
+.help { display: block; color: #9ca3af; font-size: .8rem; font-weight: normal; margin-top: 4px; }
 
 @media (max-width: 480px) {
   .row { grid-template-columns: 1fr; }
