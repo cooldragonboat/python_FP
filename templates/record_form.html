@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ '編輯' if record else '新增' }}情緒紀錄 - MoodTrack{% endblock %}
+{% block width %}medium{% endblock %}
 {% block content %}
 {% set mood_value = values.get('mood_score') or 6 %}
 {% set stress_value = values.get('stress_score') or 5 %}
