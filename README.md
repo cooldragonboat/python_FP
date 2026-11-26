@@ -12,7 +12,7 @@ MoodTrack 是一套使用 Flask 開發的**個人情緒與壓力紀錄分析平�
 - 資料分析：不同期間平均、最高最低紀錄、運動與壓力比較、睡眠與心情散佈圖
 - 權限控制：每位使用者只能看到、編輯、刪除自己的資料
 - 響應式介面（手機可用）、自訂錯誤頁面
-- 33 項自動化測試 + 33 項瀏覽器端到端測試（見 [TESTING.md](TESTING.md)）
+- 35 項自動化測試 + 33 項瀏覽器端到端測試（見 [TESTING.md](TESTING.md)）
 
 ## 使用技術
 
@@ -20,7 +20,7 @@ MoodTrack 是一套使用 Flask 開發的**個人情緒與壓力紀錄分析平�
 | --- | --- |
 | 後端 | Python 3、Flask 3 |
 | 資料庫 | SQLite、Flask-SQLAlchemy（ORM） |
-| 使用者認證 | Flask-Login、Werkzeug 密碼雜湊（scrypt） |
+| 使用者認證 | Flask-Login、Werkzeug 密碼雜湊（scrypt）、Flask-WTF（CSRF 保護） |
 | 前端 | Jinja2 模板、HTML、CSS（自訂樣式，含手機版排版） |
 | 資料視覺化 | Chart.js 4.4.1（放在本機 `static/vendor/`） |
 | 測試 | Python 內建 `unittest` |
@@ -51,6 +51,8 @@ MoodTrack 是一套使用 Flask 開發的**個人情緒與壓力紀錄分析平�
 | 登入權限 | 儀表板、紀錄、分析頁都加上 `@login_required` |
 | 資料隔離 | 所有查詢都加上 `user_id=current_user.id`；改網址存取別人的紀錄會得到 404 |
 | 刪除 | 只接受 POST，並在刪除前跳出確認視窗；不能用開網址的方式刪除 |
+| CSRF | Flask-WTF `CSRFProtect`：所有表單都帶 `csrf_token`，其他網站無法冒用登入狀態送出表單 |
+| Cookie | `HttpOnly`、`SameSite=Lax`；部署在 HTTPS 時加上 `Secure` |
 | 登入導向 | `next` 參數只允許站內路徑，避免被導到外部網站 |
 | 機密檔案 | `moodtrack.db`、`venv/`、`.env` 都在 `.gitignore`，不會上傳到 GitHub |
 | 金鑰 | `SECRET_KEY` 可用環境變數覆蓋；正式部署時不要使用程式中的預設值 |
@@ -126,10 +128,11 @@ python_FP/
 ├── requirements.txt     # 套件清單（pip install -r 安裝）
 ├── README.md            # 專案說明
 ├── TESTING.md           # 測試紀錄
+├── DEPLOY.md            # PythonAnywhere 部署教學
 ├── docs/diagrams/       # 系統架構圖、系統流程圖、ER 圖（PNG + SVG）
 ├── docs/report/         # 期末專題報告（Word）
 ├── tests/
-│   └── test_app.py      # 自動化測試（33 項）
+│   └── test_app.py      # 自動化測試（35 項）
 ├── templates/
 │   ├── base.html        # 共用版型（導覽列、提示訊息）
 │   ├── index.html       # 首頁
@@ -147,6 +150,10 @@ python_FP/
 ├── moodtrack.db         # 執行後自動產生的 SQLite 資料庫（不提交）
 └── venv/                # 虛擬環境（不提交）
 ```
+
+## 部署到網路上
+
+照 [DEPLOY.md](DEPLOY.md) 的步驟部署到 PythonAnywhere（有免費方案），就會有一個公開網址可以分享。
 
 ## 執行測試
 

@@ -21,6 +21,7 @@
         <a href="{{ url_for('records') }}" class="nav-link{{ ' active' if ep in ('records', 'edit_record', 'new_record') }}">歷史紀錄</a>
         <a href="{{ url_for('analysis') }}" class="nav-link{{ ' active' if ep == 'analysis' }}">資料分析</a>
         <form action="{{ url_for('logout') }}" method="post" class="inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="submit" class="nav-logout">登出</button>
         </form>
       {% else %}

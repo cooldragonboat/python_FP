@@ -69,7 +69,10 @@ python -m unittest -v
 | S5 | 自訂錯誤頁 | 不存在的網址顯示「找不到頁面」 | `test_error_page` | ✅ 通過 |
 | S6 | 機密檔案沒有上傳 | Git 沒有追蹤 `*.db`、`venv/`、`.env` | `test_secret_files_not_committed` | ✅ 通過 |
 
-**合計：33 項，全部通過。**
+| S7 | 沒有 CSRF token 的表單 | 回傳 400「表單已過期」，資料不寫入 | `test_post_without_token_is_rejected` | ✅ 通過 |
+| S8 | 帶正確 CSRF token 的表單 | 註冊、登入、新增、刪除都正常 | `test_forms_work_with_token` | ✅ 通過 |
+
+**合計：35 項，全部通過。**
 
 ## 瀏覽器端到端測試
 

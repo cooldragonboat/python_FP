@@ -5,6 +5,7 @@
 {% set mood_value = values.get('mood_score') or 6 %}
 {% set stress_value = values.get('stress_score') or 5 %}
 <form class="card" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <h2>{{ '編輯情緒紀錄' if record else '新增每日情緒紀錄' }}</h2>
 
   <label for="record_date">紀錄日期

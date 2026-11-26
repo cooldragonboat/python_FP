@@ -3,6 +3,7 @@
 {% block width %}narrow{% endblock %}
 {% block content %}
 <form class="card auth" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <h2>MoodTrack 註冊</h2>
   <label>使用者名稱
     <input type="text" id="username" name="username" minlength="3" maxlength="30" required

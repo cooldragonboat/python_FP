@@ -29,6 +29,8 @@ def day(days_ago=0):
 class MoodTrackTestCase(unittest.TestCase):
     def setUp(self):
         app.config["TESTING"] = True
+        # 功能測試直接送表單，不帶 CSRF token；CSRF 另外在 CsrfTests 測
+        app.config["WTF_CSRF_ENABLED"] = False
         with app.app_context():
             db.drop_all()
             db.create_all()
@@ -374,6 +376,51 @@ class SecurityTests(MoodTrackTestCase):
             self.assertFalse(path.endswith((".db", ".sqlite", ".sqlite3")), path)
             self.assertFalse(path.startswith(("venv/", ".venv/")), path)
             self.assertNotEqual(Path(path).name, ".env", path)
+
+
+class CsrfTests(MoodTrackTestCase):
+    """CSRF 保護：沒有正確 token 的 POST 一律拒絕"""
+
+    def setUp(self):
+        super().setUp()
+        app.config["WTF_CSRF_ENABLED"] = True
+
+    def tearDown(self):
+        app.config["WTF_CSRF_ENABLED"] = False
+
+    def token(self, client, path):
+        html = self.text(client.get(path))
+        return re.search(r'name="csrf_token" value="([^"]+)"', html).group(1)
+
+    def test_post_without_token_is_rejected(self):
+        client = app.test_client()
+        r = client.post("/register", data={"username": "eve", "email": "eve@example.com",
+                                           "password": "123456", "confirm": "123456"})
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("表單已過期", self.text(r))
+        with app.app_context():
+            self.assertEqual(User.query.count(), 0)
+
+    def test_forms_work_with_token(self):
+        client = app.test_client()
+        r = client.post("/register", data={"csrf_token": self.token(client, "/register"),
+                                           "username": "carol", "email": "carol@example.com",
+                                           "password": "123456", "confirm": "123456"})
+        self.assertEqual(r.status_code, 302)
+        r = client.post("/login", data={"csrf_token": self.token(client, "/login"),
+                                        "email": "carol@example.com", "password": "123456"})
+        self.assertTrue(r.location.endswith("/dashboard"))
+        r = client.post("/records/new", data={"csrf_token": self.token(client, "/records/new"),
+                                              "record_date": day(0), "mood_score": "7", "stress_score": "5",
+                                              "sleep_hours": "7", "exercise_minutes": "30"})
+        self.assertEqual(r.status_code, 302)
+        rid = self.record_id()
+        # 沒有 token 的刪除會被擋，紀錄還在
+        self.assertEqual(client.post(f"/records/{rid}/delete").status_code, 400)
+        r = client.post(f"/records/{rid}/delete", data={"csrf_token": self.token(client, "/records")})
+        self.assertEqual(r.status_code, 302)
+        with app.app_context():
+            self.assertEqual(MoodRecord.query.count(), 0)
 
 
 if __name__ == "__main__":
