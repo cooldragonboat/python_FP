@@ -19,6 +19,7 @@ from flask_login import (
     logout_user,
 )
 from flask_sqlalchemy import SQLAlchemy
+from flask_wtf.csrf import CSRFError, CSRFProtect
 from werkzeug.security import check_password_hash, generate_password_hash
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -26,7 +27,17 @@ BASE_DIR = Path(__file__).resolve().parent
 app = Flask(__name__)
 
 # 正式部署時用環境變數 SECRET_KEY 覆蓋，不要把真正的金鑰寫進程式碼
+# （PythonAnywhere 在 WSGI 設定檔裡設定，見 DEPLOY.md）
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-key")
+# Cookie 只能由伺服器讀取，且不會在跨站請求時送出
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["REMEMBER_COOKIE_HTTPONLY"] = True
+app.config["REMEMBER_COOKIE_SAMESITE"] = "Lax"
+# 部署在 HTTPS 上時設 COOKIE_SECURE=1，Cookie 只會透過加密連線傳送
+if os.environ.get("COOKIE_SECURE") == "1":
+    app.config["SESSION_COOKIE_SECURE"] = True
+    app.config["REMEMBER_COOKIE_SECURE"] = True
 # 資料庫放在專案根目錄的 moodtrack.db（*.db 已被 .gitignore 排除）
 # 自動化測試會用環境變數 DATABASE_URL 換成暫時的資料庫，不會動到真正的資料
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
@@ -35,6 +46,9 @@ app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
+
+# CSRF 保護：每個 POST 表單都要帶 csrf_token，防止其他網站冒用登入狀態送出表單
+csrf = CSRFProtect(app)
 
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
@@ -700,6 +714,18 @@ def page_not_found(error):
     )
 
 
+@app.errorhandler(CSRFError)
+def csrf_error(error):
+    return (
+        render_template(
+            "error.html",
+            title="表單已過期",
+            message="這個表單已經過期或無效，請重新整理頁面後再送出一次。",
+        ),
+        400,
+    )
+
+
 @app.errorhandler(500)
 def internal_server_error(error):
     db.session.rollback()
@@ -712,4 +738,7 @@ def internal_server_error(error):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    # 只在自己電腦上用 python app.py 執行時會跑到這裡；
+    # 部署到 PythonAnywhere 時由 WSGI 載入 app，不會開啟除錯模式。
+    # 想關掉除錯模式可設環境變數 FLASK_DEBUG=0
+    app.run(debug=os.environ.get("FLASK_DEBUG", "1") == "1")

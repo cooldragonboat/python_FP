@@ -3,6 +3,7 @@
 {% block width %}narrow{% endblock %}
 {% block content %}
 <form class="card auth" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <h2>MoodTrack 登入</h2>
   <label>電子郵件
     <input type="text" id="email" name="email" required placeholder="也可以輸入使用者名稱"
