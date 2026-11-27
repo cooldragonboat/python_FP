@@ -2,6 +2,7 @@
 
 MoodTrack 是一套使用 Flask 開發的**個人情緒與壓力紀錄分析平台**（程式設計 Python 課程期末專案）。
 每天花 30 秒記下心情、壓力、睡眠與運動，系統會用統計與圖表幫你看見自己的生活模式。
+https://smallfire.pythonanywhere.com/
 
 ## 目前功能
 
