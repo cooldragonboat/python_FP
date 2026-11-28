@@ -526,3 +526,4 @@ a.cal-cell.empty:hover .cal-add, a.cal-cell.empty:focus-visible .cal-add, a.cal-
   .nav-links { gap: 0; }
   .nav-link { padding: 6px 8px; }
 }
+.llm-error { color: #be123c; }
