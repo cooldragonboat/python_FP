@@ -57,7 +57,7 @@
   <section class="card calendar-card">
     <div class="card-header">
       <h2>心情日曆</h2>
-      <span class="chart-sub">最近 5 週・顏色越深心情越好</span>
+      <span class="chart-sub">最近 5 週・顏色越深心情越好・點日期可記錄或修改</span>
     </div>
     <div class="mood-calendar" role="table" aria-label="最近 5 週心情日曆">
       <div class="cal-row cal-head" role="row">
@@ -72,15 +72,17 @@
             {% elif r %}
               <a class="cal-cell level-{{ r.mood_score }}{{ ' today' if cell.today }}" role="cell"
                  href="{{ url_for('edit_record', record_id=r.id, next=url_for('dashboard')) }}"
-                 title="{{ cell.date.isoformat() }}・{{ r.mood_label }} {{ r.mood_score }}/10・壓力 {{ r.stress_score }}/10">
+                 title="{{ cell.date.isoformat() }}・{{ r.mood_label }} {{ r.mood_score }}/10・壓力 {{ r.stress_score }}/10・點一下修改">
                 <span class="cal-day">{{ cell.date.day }}</span>
                 <span class="cal-emoji">{{ r.emoji }}</span>
               </a>
             {% else %}
-              <span class="cal-cell empty{{ ' today' if cell.today }}" role="cell"
-                    title="{{ cell.date.isoformat() }}・沒有紀錄">
+              <a class="cal-cell empty{{ ' today' if cell.today }}" role="cell"
+                 href="{{ url_for('new_record', date=cell.date.isoformat(), next=url_for('dashboard')) }}"
+                 title="{{ cell.date.isoformat() }}・還沒有紀錄，點一下補記">
                 <span class="cal-day">{{ cell.date.day }}</span>
-              </span>
+                <span class="cal-add" aria-hidden="true">＋</span>
+              </a>
             {% endif %}
           {% endfor %}
         </div>

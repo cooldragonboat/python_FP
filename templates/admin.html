@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}管理 - MoodTrack{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">管理</h1>
+    <p class="welcome">整體使用統計與問題回報。為了保護隱私，這裡不顯示任何人的心情分數或備註。</p>
+  </div>
+</div>
+
+<section class="stat-grid">
+  <div class="stat"><span class="stat-label">使用者</span><span class="stat-value">{{ stats.total_users }}<small> 人</small></span></div>
+  <div class="stat"><span class="stat-label">最近 7 天新註冊</span><span class="stat-value">{{ stats.new_users }}<small> 人</small></span></div>
+  <div class="stat"><span class="stat-label">最近 7 天有記錄</span><span class="stat-value">{{ stats.active_users }}<small> 人</small></span></div>
+  <div class="stat"><span class="stat-label">紀錄總數</span><span class="stat-value">{{ stats.total_records }}<small> 筆</small></span></div>
+  <div class="stat"><span class="stat-label">平均每人</span><span class="stat-value">{{ stats.avg_records }}<small> 筆</small></span></div>
+  <div class="stat"><span class="stat-label">未解決回報</span><span class="stat-value">{{ stats.open_feedback }}<small> 件</small></span></div>
+</section>
+
+<section class="card chart-card">
+  <h2>最近 30 天每日新增紀錄</h2>
+  <p class="chart-sub">依紀錄建立時間計算，共 {{ stats.records_week }} 筆在最近 7 天新增；小幫手累計被提問 {{ stats.questions }} 次</p>
+  <div class="chart-box short"><canvas id="dailyChart" role="img" aria-label="最近 30 天每日新增紀錄數長條圖"></canvas></div>
+</section>
+
+<section class="card">
+  <div class="card-header">
+    <h2>問題回報</h2>
+    <nav class="segmented" aria-label="篩選狀態">
+      {% for key, label in [('unresolved', '未解決'), ('open', '待處理'), ('in_progress', '處理中'), ('resolved', '已解決'), ('all', '全部')] %}
+        <a href="{{ url_for('admin', status=key) }}" class="{{ 'active' if status_filter == key }}">{{ label }}</a>
+      {% endfor %}
+    </nav>
+  </div>
+  {% if feedback_items %}
+    {% for f in feedback_items %}
+      <form class="fb-admin" method="post" action="{{ url_for('admin_feedback_update', feedback_id=f.id, status=status_filter) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="fb-head">
+          <span class="status status-{{ f.status }}">{{ feedback_status[f.status] }}</span>
+          <span class="fb-cat">{{ feedback_categories.get(f.category, f.category) }}</span>
+          <span>#{{ f.id }}・{{ f.user.username }}（{{ f.user.email }}）</span>
+          <time>{{ f.created_at.strftime('%Y-%m-%d %H:%M') }}</time>
+        </div>
+        <h3>{{ f.title }}</h3>
+        <p class="fb-content">{{ f.content }}</p>
+        <div class="fb-admin-row">
+          <label>狀態
+            <select name="status">
+              {% for key, label in feedback_status.items() %}
+                <option value="{{ key }}" {% if f.status == key %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label class="grow">回覆
+            <textarea name="admin_reply" rows="2" maxlength="2000" placeholder="回覆會顯示在使用者的「我的回報」">{{ f.admin_reply or '' }}</textarea>
+          </label>
+          <button type="submit" class="button">儲存</button>
+        </div>
+      </form>
+    {% endfor %}
+  {% else %}
+    <p class="empty">目前沒有符合條件的回報。</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>小幫手答不出來的問題</h2>
+  <p class="chart-sub">說明文件裡找不到相關內容的提問，可以據此補充 docs/help 的說明文件。</p>
+  {% if unanswered %}
+    <ul class="unanswered">
+      {% for q in unanswered %}
+        <li><span>{{ q.question }}</span><time>{{ q.created_at.strftime('%m/%d %H:%M') }}</time></li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty">目前沒有。</p>
+  {% endif %}
+</section>
+
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<script>
+(() => {
+  const daily = {{ daily | tojson }};
+  const css = getComputedStyle(document.documentElement);
+  Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+  Chart.defaults.color = css.getPropertyValue('--text-secondary').trim();
+  new Chart(document.getElementById('dailyChart'), {
+    type: 'bar',
+    data: { labels: daily.map(d => d.label), datasets: [{ label: '新增紀錄', data: daily.map(d => d.count),
+      backgroundColor: css.getPropertyValue('--series-mood').trim(), maxBarThickness: 18,
+      borderRadius: { topLeft: 4, topRight: 4 }, borderSkipped: 'bottom' }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+      scales: { x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkipPadding: 10 } },
+                y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: css.getPropertyValue('--grid').trim() }, border: { display: false } } } },
+  });
+})();
+</script>
+{% endblock %}

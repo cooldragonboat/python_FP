@@ -98,6 +98,10 @@ if project_home not in sys.path:
 os.environ["SECRET_KEY"] = "貼上你的SECRET_KEY"
 # 網站走 HTTPS，Cookie 只透過加密連線傳送
 os.environ["COOKIE_SECURE"] = "1"
+# 管理員帳號（換成你註冊時用的電子郵件），登入後導覽列會出現「管理」
+os.environ["ADMIN_EMAILS"] = "你的email@example.com"
+# 雲端主機上沒有 Ollama，說明小幫手只用檢索（直接顯示說明段落）
+os.environ["RAG_USE_LLM"] = "0"
 
 from app import app as application  # noqa: E402
 ```
@@ -147,6 +151,16 @@ pip install -r requirements.txt
 > 如果更新內容改了資料表結構，需要先備份再刪掉 `moodtrack.db` 讓它重建，資料會清空。
 
 ---
+
+## 說明小幫手在雲端的行為
+
+PythonAnywhere 上沒有 Ollama，也連不到你電腦上的 Ollama，所以 WSGI 設定了 `RAG_USE_LLM=0`：
+小幫手會直接顯示說明文件中最相關的段落，不會有「AI 整理」的回答。
+完整的 AI 回答請在自己電腦上執行 `python app.py` 時展示。
+
+## 舊的資料庫要刪掉嗎？
+
+不用。這次新增的 `feedback`、`help_questions` 兩張資料表，啟動時會自動建立，原本的帳號和紀錄都會保留。
 
 ## 免費方案要注意的事
 

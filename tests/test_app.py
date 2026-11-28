@@ -17,7 +17,8 @@ from pathlib import Path
 # 必須在匯入 app 之前設定，讓測試使用暫時資料庫
 os.environ["DATABASE_URL"] = "sqlite://"
 
-from app import MoodRecord, User, app, db  # noqa: E402
+import rag  # noqa: E402
+from app import Feedback, HelpQuestion, MoodRecord, User, app, db  # noqa: E402
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 
@@ -421,6 +422,187 @@ class CsrfTests(MoodTrackTestCase):
         self.assertEqual(r.status_code, 302)
         with app.app_context():
             self.assertEqual(MoodRecord.query.count(), 0)
+
+
+class CalendarTests(MoodTrackTestCase):
+    """心情日曆：任何一天都可以點進去記錄或修改"""
+
+    def test_empty_day_links_to_new_record_with_date(self):
+        client = self.user_client("testuser")
+        html = self.text(client.get("/dashboard"))
+        self.assertIn(f"/records/new?date={day(3)}&amp;next=/dashboard", html)
+
+    def test_new_record_prefills_date_and_returns_to_dashboard(self):
+        client = self.user_client("testuser")
+        html = self.text(client.get(f"/records/new?date={day(3)}&next=/dashboard"))
+        self.assertIn(f'value="{day(3)}"', html)
+        self.assertIn("正在補記", html)
+        r = client.post(f"/records/new?date={day(3)}&next=/dashboard",
+                        data={"record_date": day(3), "mood_score": "6", "stress_score": "4",
+                              "sleep_hours": "7", "exercise_minutes": "0"})
+        self.assertTrue(r.location.endswith("/dashboard"))
+
+    def test_day_with_record_goes_to_edit(self):
+        client = self.user_client("testuser")
+        self.add_record(client, record_date=day(2))
+        r = client.get(f"/records/new?date={day(2)}&next=/dashboard")
+        self.assertIn(f"/records/{self.record_id()}/edit", r.location)
+
+    def test_new_without_date_never_redirects_to_edit(self):
+        # 今天已經記錄過，按「新增」想補記別天時，不能被帶去編輯今天那筆
+        client = self.user_client("testuser")
+        self.add_record(client, record_date=day(0), note="今天")
+        r = client.get("/records/new")
+        self.assertEqual(r.status_code, 200)
+        self.add_record(client, record_date=day(1), note="昨天補記")
+        with app.app_context():
+            self.assertEqual(MoodRecord.query.count(), 2)
+            self.assertEqual(MoodRecord.query.filter_by(record_date=date.today()).one().note, "今天")
+
+    def test_future_or_invalid_date_falls_back_to_today(self):
+        client = self.user_client("testuser")
+        r = client.get(f"/records/new?date={day(-2)}", follow_redirects=True)
+        self.assertIn("不能記錄未來的日期", self.text(r))
+        self.assertIn(f'value="{day(0)}"', self.text(r))
+        self.assertIn(f'value="{day(0)}"', self.text(client.get("/records/new?date=garbage")))
+
+
+class RagTests(unittest.TestCase):
+    """說明小幫手：檢索、生成與退回"""
+
+    def setUp(self):
+        self._orig = rag.call_ollama
+
+    def tearDown(self):
+        rag.call_ollama = self._orig
+
+    def test_retrieval_finds_relevant_section(self):
+        cases = {
+            "怎麼刪除紀錄": "刪除紀錄",
+            "忘記密碼怎麼辦": "忘記密碼怎麼辦？",
+            "表單已過期": "為什麼送出表單時出現「表單已過期」？",
+            "管理員看得到我的心情嗎": "管理員看得到我的心情紀錄嗎？",
+        }
+        for q, heading in cases.items():
+            self.assertEqual(rag.get_retriever().search(q)[0][0].heading, heading, q)
+
+    def test_unrelated_question_finds_nothing(self):
+        a = rag.answer_question("今天天氣如何", use_llm=False)
+        self.assertEqual(a.mode, "none")
+        self.assertFalse(a.sources)
+
+    def test_llm_answer_uses_retrieved_context(self):
+        seen = {}
+
+        def fake(system, user):
+            seen["system"], seen["user"] = system, user
+            return "到歷史紀錄按「刪除」即可。"
+
+        rag.call_ollama = fake
+        a = rag.answer_question("怎麼刪除紀錄", use_llm=True)
+        self.assertEqual(a.mode, "llm")
+        self.assertEqual(a.answer, "到歷史紀錄按「刪除」即可。")
+        self.assertIn("確定要刪除這筆紀錄嗎", seen["user"])  # 檢索到的段落有放進提示詞
+        self.assertIn("怎麼刪除紀錄", seen["user"])
+        self.assertIn("不提供醫療診斷", seen["system"])
+
+    def test_falls_back_to_retrieval_when_llm_unavailable(self):
+        def broken(system, user):
+            raise rag.LLMUnavailable("連不到 Ollama")
+
+        rag.call_ollama = broken
+        a = rag.answer_question("怎麼刪除紀錄", use_llm=True)
+        self.assertEqual(a.mode, "retrieval")
+        self.assertIn("確定要刪除這筆紀錄嗎", a.answer)
+        self.assertTrue(a.error)
+
+    def test_crisis_always_includes_hotlines(self):
+        a = rag.answer_question("我真的不想活了", use_llm=False)
+        self.assertTrue(a.crisis)
+        self.assertEqual(a.sources[0].heading, rag.CRISIS_HEADING)
+        self.assertIn("1925", a.answer)
+
+
+class HelpCenterTests(MoodTrackTestCase):
+    """說明與回報頁面"""
+
+    def setUp(self):
+        super().setUp()
+        self._orig = rag.RAG_USE_LLM
+        rag.RAG_USE_LLM = False  # 測試不連 Ollama
+
+    def tearDown(self):
+        rag.RAG_USE_LLM = self._orig
+
+    def test_ask_question_shows_answer_and_logs_it(self):
+        client = self.user_client("testuser")
+        html = self.text(client.get("/help?q=怎麼刪除紀錄"))
+        self.assertIn("確定要刪除這筆紀錄嗎", html)
+        self.assertIn("回報給管理員", html)
+        with app.app_context():
+            q = HelpQuestion.query.one()
+            self.assertEqual((q.question, q.mode), ("怎麼刪除紀錄", "retrieval"))
+
+    def test_crisis_question_shows_hotline_box(self):
+        client = self.user_client("testuser")
+        html = self.text(client.get("/help?q=我想自殺"))
+        self.assertIn("你不是一個人", html)
+        self.assertIn("1925", html)
+
+    def test_help_requires_login(self):
+        self.assertEqual(app.test_client().get("/help").status_code, 302)
+
+    def test_submit_feedback_and_only_see_own(self):
+        alice, bob = self.user_client("alice"), self.user_client("bob")
+        self.assertIn("請填寫標題與內容", self.text(alice.post(
+            "/feedback/new", data={"category": "bug", "title": "", "content": ""})))
+        r = alice.post("/feedback/new", data={"category": "bug", "title": "圖表沒出現",
+                                              "content": "儀表板空白"}, follow_redirects=True)
+        self.assertIn("已送出回報", self.text(r))
+        self.assertIn("圖表沒出現", self.text(r))
+        self.assertNotIn("圖表沒出現", self.text(bob.get("/feedback")))
+
+    def test_feedback_form_prefill_from_question(self):
+        client = self.user_client("testuser")
+        html = self.text(client.get("/feedback/new?category=question&title=怎麼匯出"))
+        self.assertIn('value="怎麼匯出"', html)
+
+
+class AdminTests(MoodTrackTestCase):
+    """管理頁：只有 ADMIN_EMAILS 裡的帳號能進入"""
+
+    def setUp(self):
+        super().setUp()
+        os.environ["ADMIN_EMAILS"] = "boss@example.com"
+        self.user = self.user_client("alice")
+        self.add_record(self.user, note="非常私密的心情")
+        self.user.post("/feedback/new", data={"category": "bug", "title": "按鈕壞了", "content": "按了沒反應"})
+        self.admin = self.user_client("boss")
+
+    def tearDown(self):
+        os.environ.pop("ADMIN_EMAILS", None)
+
+    def test_non_admin_cannot_access(self):
+        self.assertEqual(self.user.get("/admin").status_code, 404)
+        with app.app_context():
+            fid = Feedback.query.one().id
+        self.assertEqual(self.user.post(f"/admin/feedback/{fid}", data={"status": "resolved"}).status_code, 404)
+        self.assertNotIn('href="/admin"', self.text(self.user.get("/dashboard")))
+
+    def test_admin_sees_stats_but_not_mood_content(self):
+        html = self.text(self.admin.get("/admin"))
+        self.assertIn("按鈕壞了", html)
+        self.assertIn("dailyChart", html)
+        self.assertNotIn("非常私密的心情", html)
+        self.assertIn('href="/admin"', self.text(self.admin.get("/dashboard")))
+
+    def test_admin_reply_visible_to_user(self):
+        with app.app_context():
+            fid = Feedback.query.one().id
+        self.admin.post(f"/admin/feedback/{fid}", data={"status": "resolved", "admin_reply": "已修好，請再試一次"})
+        html = self.text(self.user.get("/feedback"))
+        self.assertIn("已修好，請再試一次", html)
+        self.assertIn("已解決", html)
 
 
 if __name__ == "__main__":
