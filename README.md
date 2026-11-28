@@ -8,11 +8,14 @@ MoodTrack 是一套使用 Flask 開發的**個人情緒與壓力紀錄分析平�
 - 使用者註冊、登入、登出，密碼以雜湊儲存
 - 新增、查看、編輯、刪除每日情緒紀錄（完整 CRUD），每人每天一筆
 - 歷史紀錄：日期／分數篩選、分頁
-- 儀表板：心情日曆（最近 5 週，顏色深淺代表心情）、連續記錄天數、最近 7／30／90 天統計卡片、心情與壓力趨勢圖、睡眠趨勢圖、運動長條圖、小發現
+- 儀表板：心情日曆（最近 5 週，顏色深淺代表心情，點任一天即可補記或修改）、連續記錄天數、最近 7／30／90 天統計卡片、心情與壓力趨勢圖、睡眠趨勢圖、運動長條圖、小發現
 - 資料分析：不同期間平均、最高最低紀錄、運動與壓力比較、睡眠與心情散佈圖
+- 說明小幫手（RAG）：從說明文件檢索答案，再由本機 Ollama 模型整理回答；提到想傷害自己時一定顯示求助專線
+- 問題回報：使用者送出回報、查看處理狀態與管理員回覆
+- 管理頁：整體使用統計（不顯示任何人的心情內容）、回報處理、小幫手答不出來的問題
 - 權限控制：每位使用者只能看到、編輯、刪除自己的資料
 - 響應式介面（手機可用）、自訂錯誤頁面
-- 35 項自動化測試 + 33 項瀏覽器端到端測試（見 [TESTING.md](TESTING.md)）
+- 53 項自動化測試 + 33 項瀏覽器端到端測試（見 [TESTING.md](TESTING.md)）
 
 ## 使用技術
 
@@ -23,6 +26,7 @@ MoodTrack 是一套使用 Flask 開發的**個人情緒與壓力紀錄分析平�
 | 使用者認證 | Flask-Login、Werkzeug 密碼雜湊（scrypt）、Flask-WTF（CSRF 保護） |
 | 前端 | Jinja2 模板、HTML、CSS（自訂樣式，含手機版排版） |
 | 資料視覺化 | Chart.js 4.4.1（放在本機 `static/vendor/`） |
+| 說明小幫手 | 自製 BM25 檢索（中文 bigram）＋ 本機 Ollama（預設 gemma4），不需額外套件 |
 | 測試 | Python 內建 `unittest` |
 
 ## 專題報告
@@ -95,6 +99,8 @@ MoodTrack 是一套使用 Flask 開發的**個人情緒與壓力紀錄分析平�
 | 資料表 | 欄位 |
 | --- | --- |
 | `users`（`User`） | `id` PK、`username`（唯一）、`email`（唯一）、`password_hash`（只存雜湊）、`created_at` |
+| `feedback`（`Feedback`） | `id`、`user_id` FK、`category`、`title`、`content`、`status`、`admin_reply`、`created_at`、`updated_at` |
+| `help_questions`（`HelpQuestion`） | `id`、`user_id` FK、`question`、`mode`（llm／retrieval／none）、`created_at` |
 | `mood_records`（`MoodRecord`） | `id` PK、`record_date`、`mood_score`（1～10）、`stress_score`（1～10）、`sleep_hours`、`exercise_minutes`、`note`、`created_at`、`user_id` FK（`user_id` + `record_date` 唯一） |
 
 一位使用者擁有多筆情緒紀錄（`User.mood_records`），刪除使用者時會一併刪除其紀錄。
@@ -125,14 +131,16 @@ python app.py
 ```
 python_FP/
 ├── app.py               # Flask 主程式：設定、資料模型、路由
+├── rag.py               # 說明小幫手：BM25 檢索 + Ollama 生成
 ├── requirements.txt     # 套件清單（pip install -r 安裝）
 ├── README.md            # 專案說明
 ├── TESTING.md           # 測試紀錄
 ├── DEPLOY.md            # PythonAnywhere 部署教學
 ├── docs/diagrams/       # 系統架構圖、系統流程圖、ER 圖（PNG + SVG）
 ├── docs/report/         # 期末專題報告（Word）
+├── docs/help/           # 說明小幫手的知識庫（Markdown）
 ├── tests/
-│   └── test_app.py      # 自動化測試（35 項）
+│   └── test_app.py      # 自動化測試（53 項）
 ├── templates/
 │   ├── base.html        # 共用版型（導覽列、提示訊息）
 │   ├── index.html       # 首頁
@@ -142,6 +150,9 @@ python_FP/
 │   ├── records.html     # 歷史情緒紀錄列表（含篩選）
 │   ├── analysis.html    # 資料分析
 │   ├── record_form.html # 新增／編輯每日情緒紀錄
+│   ├── help.html        # 說明與回報（小幫手）
+│   ├── feedback_*.html  # 回報表單、我的回報
+│   ├── admin.html       # 管理頁
 │   └── error.html       # 404／500 錯誤頁
 ├── static/
 │   ├── style.css        # 樣式
@@ -150,6 +161,43 @@ python_FP/
 ├── moodtrack.db         # 執行後自動產生的 SQLite 資料庫（不提交）
 └── venv/                # 虛擬環境（不提交）
 ```
+
+## 說明小幫手（RAG）
+
+```
+問題 → 檢索：BM25 從 docs/help/*.md 找出最相關的段落
+     → 增強：把段落放進提示詞，要求模型只根據這些內容回答
+     → 生成：呼叫本機 Ollama（gemma4）產生回答，並列出參考段落
+```
+
+- **知識庫**只有 `docs/help/` 的說明文件，**不包含任何人的心情紀錄**。想讓小幫手會回答更多問題，直接在這些 Markdown 檔裡新增 `## 小標題` 段落即可，不需要改程式。
+- **連不到 Ollama 時**（例如部署在雲端主機），自動改成直接顯示最相關的說明段落，網站照常運作。
+- 問題提到想傷害自己時，不論檢索結果如何，一定顯示安心專線 1925 等求助資訊。
+
+### 在自己電腦上啟用 AI 回答
+
+1. 安裝 [Ollama](https://ollama.com/download)，下載模型：`ollama pull gemma4`
+2. 確認 Ollama 正在執行（安裝後通常會自動在背景執行）
+3. 照常 `python app.py`，到「說明」頁提問，回答旁邊出現「🤖 AI 整理（gemma4）」就成功了
+
+可用環境變數調整（PowerShell 寫法 `$env:名稱="值"`，要在 `python app.py` 之前執行）：
+
+| 環境變數 | 預設值 | 用途 |
+| --- | --- | --- |
+| `OLLAMA_MODEL` | `gemma4` | 模型名稱，要和 `ollama list` 顯示的一樣，例如 `gemma4:e4b` |
+| `OLLAMA_HOST` | `http://localhost:11434` | Ollama 的位址 |
+| `RAG_USE_LLM` | `1` | 設成 `0` 只用檢索，不呼叫模型 |
+| `ADMIN_EMAILS` | （空） | 管理員的電子郵件，多個用逗號分隔，例如 `$env:ADMIN_EMAILS="me@example.com"` |
+
+## 管理頁
+
+`ADMIN_EMAILS` 裡的帳號登入後，導覽列會多出「管理」，可以看到：
+
+- 使用者人數、最近 7 天新註冊與有記錄的人數、紀錄總數、最近 30 天每日新增紀錄
+- 所有問題回報，可以更新狀態（待處理／處理中／已解決）並回覆
+- 小幫手答不出來的問題，可以據此補充說明文件
+
+為了保護隱私，管理頁**不顯示任何人的心情分數或備註**。其他人進入 `/admin` 只會看到「找不到頁面」。
 
 ## 部署到網路上
 

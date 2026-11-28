@@ -7,6 +7,9 @@
 <form class="card" method="post">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <h2>{{ '編輯情緒紀錄' if record else '新增每日情緒紀錄' }}</h2>
+  {% if values.get('record_date') and values.get('record_date') != today_iso %}
+    <p class="form-date-note">📅 正在{{ '修改' if record else '補記' }} <strong>{{ values.get('record_date') }}</strong> 的心情</p>
+  {% endif %}
 
   <label for="record_date">紀錄日期
     <input type="date" id="record_date" name="record_date" required

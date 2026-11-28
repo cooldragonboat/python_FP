@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}說明與回報 - MoodTrack{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">說明與回報</h1>
+    <p class="welcome">有使用上的問題嗎？問問小幫手，沒解決的話可以直接回報給管理員。</p>
+  </div>
+  <a class="button secondary" href="{{ url_for('feedback_new') }}">✉️ 回報問題</a>
+</div>
+
+<div class="help-layout">
+  <div>
+    <form class="card ask-card" method="get" action="{{ url_for('help_center') }}" id="ask-form">
+      <h2>💬 問問小幫手</h2>
+      <label for="q" class="sr-only">你的問題</label>
+      <div class="ask-row">
+        <input type="text" id="q" name="q" maxlength="300" required autocomplete="off"
+               placeholder="例如：怎麼補記以前的心情？" value="{{ question }}">
+        <button type="submit" class="button" id="ask-btn">詢問</button>
+      </div>
+      <div class="chips">
+        {% for s in suggestions %}
+          <a class="chip" href="{{ url_for('help_center', q=s) }}">{{ s }}</a>
+        {% endfor %}
+      </div>
+    </form>
+
+    {% if result %}
+      {% if result.crisis %}
+        <section class="card crisis">
+          <h2>💜 你不是一個人</h2>
+          <p>如果你正在經歷很痛苦的時刻，或有傷害自己的念頭，請現在就聯絡可以陪你的人：</p>
+          <ul>
+            <li><strong>安心專線 1925</strong>（24 小時、免付費）</li>
+            <li><strong>生命線 1995</strong>　<strong>張老師 1980</strong></li>
+            <li>緊急危險請撥 <strong>119</strong> 或 <strong>110</strong></li>
+          </ul>
+          <p class="hint">也可以告訴你信任的家人、朋友、導師或學校諮商中心。</p>
+        </section>
+      {% endif %}
+
+      <section class="card answer-card">
+        <div class="answer-head">
+          <h2>回答</h2>
+          {% if result.mode == 'llm' %}
+            <span class="badge badge-ai">🤖 AI 整理（{{ llm_model }}）</span>
+          {% elif result.mode == 'retrieval' %}
+            <span class="badge">📄 說明文件</span>
+          {% endif %}
+        </div>
+        <p class="answer-q">Q：{{ result.question }}</p>
+        <div class="answer-text">{{ result.answer }}</div>
+
+        {% if result.sources %}
+          <details class="sources" {% if result.mode == 'retrieval' %}open{% endif %}>
+            <summary>參考的說明段落（{{ result.sources|length }}）</summary>
+            {% for c in result.sources %}
+              <div class="source">
+                <strong>{{ c.title }}</strong>
+                <p>{{ c.text }}</p>
+              </div>
+            {% endfor %}
+          </details>
+        {% endif %}
+
+        {% if result.mode == 'retrieval' and result.error %}
+          <p class="hint">目前沒有連上 AI 模型，以上是說明文件中最相關的段落。</p>
+        {% endif %}
+
+        <div class="answer-foot">
+          <span>沒有解決你的問題？</span>
+          <a class="button ghost" href="{{ url_for('feedback_new', category='question', title=result.question[:100], content='我問了小幫手：「' ~ result.question ~ '」，但還是不清楚。') }}">回報給管理員 →</a>
+        </div>
+      </section>
+    {% endif %}
+  </div>
+
+  <aside class="card my-feedback">
+    <div class="card-header">
+      <h2>我的回報</h2>
+      <a href="{{ url_for('feedback_list') }}">全部 →</a>
+    </div>
+    {% if my_feedback %}
+      <ul class="fb-mini">
+        {% for f in my_feedback %}
+          <li>
+            <span class="status status-{{ f.status }}">{{ feedback_status[f.status] }}</span>
+            <a href="{{ url_for('feedback_list') }}#fb-{{ f.id }}">{{ f.title }}</a>
+            {% if f.admin_reply %}<span class="replied">💬 已回覆</span>{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="empty">還沒有送出過回報。</p>
+    {% endif %}
+    <a class="button" href="{{ url_for('feedback_new') }}">✉️ 回報問題</a>
+  </aside>
+</div>
+
+<script>
+  // 送出後顯示「思考中」，避免重複送出（本機模型可能要幾秒到幾十秒）
+  document.getElementById('ask-form').addEventListener('submit', () => {
+    const btn = document.getElementById('ask-btn');
+    btn.disabled = true;
+    btn.textContent = '思考中…';
+  });
+</script>
+{% endblock %}

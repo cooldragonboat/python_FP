@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}我的回報 - MoodTrack{% endblock %}
+{% block width %}medium{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">我的回報</h1>
+    <p class="welcome">管理員回覆後會顯示在這裡。</p>
+  </div>
+  <a class="button" href="{{ url_for('feedback_new') }}">✉️ 回報問題</a>
+</div>
+
+{% if items %}
+  {% for f in items %}
+    <section class="card fb-item" id="fb-{{ f.id }}">
+      <div class="fb-head">
+        <span class="status status-{{ f.status }}">{{ feedback_status[f.status] }}</span>
+        <span class="fb-cat">{{ feedback_categories.get(f.category, f.category) }}</span>
+        <time>{{ f.created_at.strftime('%Y-%m-%d %H:%M') }}</time>
+      </div>
+      <h2>{{ f.title }}</h2>
+      <p class="fb-content">{{ f.content }}</p>
+      {% if f.admin_reply %}
+        <div class="fb-reply">
+          <strong>💬 管理員回覆</strong>
+          <p>{{ f.admin_reply }}</p>
+        </div>
+      {% endif %}
+    </section>
+  {% endfor %}
+{% else %}
+  <section class="card"><p class="empty">還沒有送出過回報。</p></section>
+{% endif %}
+<p class="switch"><a href="{{ url_for('help_center') }}">回到說明與回報</a></p>
+{% endblock %}

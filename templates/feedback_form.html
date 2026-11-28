@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}回報問題 - MoodTrack{% endblock %}
+{% block width %}medium{% endblock %}
+{% block content %}
+<form class="card" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <h2>✉️ 回報問題</h2>
+  <p class="hint left">遇到錯誤、帳號問題或有功能建議都可以告訴我們。請不要在內容中寫出你的密碼。</p>
+
+  <label for="category">問題類型
+    <select id="category" name="category" required>
+      {% for key, label in feedback_categories.items() %}
+        <option value="{{ key }}" {% if values.category == key %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </label>
+
+  <label for="title">標題
+    <input type="text" id="title" name="title" maxlength="100" required
+           placeholder="用一句話描述問題" value="{{ values.title }}">
+  </label>
+
+  <label for="content">詳細內容
+    <textarea id="content" name="content" rows="6" maxlength="2000" required
+              placeholder="發生了什麼事？在哪個頁面？做了哪些操作？">{{ values.content }}</textarea>
+  </label>
+
+  <button type="submit" class="button">送出回報</button>
+  <p class="switch"><a href="{{ url_for('help_center') }}">回到說明與回報</a></p>
+</form>
+{% endblock %}

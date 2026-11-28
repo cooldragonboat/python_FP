@@ -9,7 +9,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
-from flask import Flask, flash, redirect, render_template, request, url_for
+from flask import Flask, abort, flash, redirect, render_template, request, url_for
 from flask_login import (
     LoginManager,
     UserMixin,
@@ -21,6 +21,8 @@ from flask_login import (
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFError, CSRFProtect
 from werkzeug.security import check_password_hash, generate_password_hash
+
+import rag
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -126,9 +128,70 @@ class MoodRecord(db.Model):
         return mood_face(self.mood_score)[1]
 
 
+class Feedback(db.Model):
+    """使用者送出的問題回報；管理員可以更新狀態並回覆。"""
+
+    __tablename__ = "feedback"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    category = db.Column(db.String(20), nullable=False)
+    title = db.Column(db.String(100), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(20), nullable=False, default="open")
+    admin_reply = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+
+    user = db.relationship("User", backref=db.backref("feedback", cascade="all, delete-orphan"))
+
+
+class HelpQuestion(db.Model):
+    """說明小幫手的提問紀錄：用來找出說明文件不足的地方。"""
+
+    __tablename__ = "help_questions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    question = db.Column(db.String(300), nullable=False)
+    mode = db.Column(db.String(20), nullable=False)  # llm / retrieval / none
+    created_at = db.Column(db.DateTime, default=datetime.now)
+
+    user = db.relationship("User", backref=db.backref("help_questions", cascade="all, delete-orphan"))
+
+
+FEEDBACK_CATEGORIES = {
+    "bug": "系統錯誤",
+    "account": "帳號問題",
+    "question": "使用問題",
+    "suggestion": "功能建議",
+    "other": "其他",
+}
+FEEDBACK_STATUS = {
+    "open": "待處理",
+    "in_progress": "處理中",
+    "resolved": "已解決",
+}
+
+
+def is_admin(user) -> bool:
+    """管理員由環境變數 ADMIN_EMAILS 指定（多個用逗號分隔），不存在資料庫裡。"""
+    admins = {
+        e.strip().lower()
+        for e in os.environ.get("ADMIN_EMAILS", "").split(",")
+        if e.strip()
+    }
+    return bool(getattr(user, "is_authenticated", False)) and user.email.lower() in admins
+
+
 @app.context_processor
 def inject_today():
-    return {"today_iso": date.today().isoformat()}
+    return {
+        "today_iso": date.today().isoformat(),
+        "is_admin": is_admin(current_user),
+        "feedback_categories": FEEDBACK_CATEGORIES,
+        "feedback_status": FEEDBACK_STATUS,
+    }
 
 
 @login_manager.user_loader
@@ -484,11 +547,28 @@ def new_record():
         db.session.add(MoodRecord(user_id=current_user.id, **data))
         db.session.commit()
         flash("情緒紀錄新增成功。", "success")
-        return redirect(url_for("dashboard"))
+        return redirect(_safe_next(request.args.get("next")) or url_for("dashboard"))
+
+    # 從心情日曆點進來時會帶 ?date=YYYY-MM-DD，表單直接預填那一天
+    requested = _parse_date(request.args.get("date", "").strip())
+    target = requested or date.today()
+    if target > date.today():
+        flash("不能記錄未來的日期。", "error")
+        target, requested = date.today(), None
+    if requested:
+        # 明確指定的那天已經記錄過了，直接帶去編輯。
+        # 沒指定日期時不跳轉：使用者可能是想改日期補記別天，不能把他帶去編輯今天那筆。
+        existing = MoodRecord.query.filter_by(
+            user_id=current_user.id, record_date=requested
+        ).first()
+        if existing:
+            return redirect(url_for(
+                "edit_record", record_id=existing.id, next=request.args.get("next")
+            ))
 
     return render_template(
         "record_form.html",
-        values={"record_date": date.today().isoformat()},
+        values={"record_date": target.isoformat()},
         mood_levels=MOOD_LEVELS,
     )
 
@@ -697,6 +777,173 @@ def delete_record(record_id: int):
 
     flash("情緒紀錄已刪除。", "success")
     return redirect(_safe_next(request.form.get("next")) or url_for("records"))
+
+
+# ---------------------------------------------------------------------------
+# 說明與回報
+# ---------------------------------------------------------------------------
+
+SUGGESTED_QUESTIONS = [
+    "怎麼補記以前的心情？",
+    "怎麼刪除一筆紀錄？",
+    "為什麼出現「表單已過期」？",
+    "管理員看得到我的心情紀錄嗎？",
+    "平均值是怎麼算的？",
+    "忘記密碼怎麼辦？",
+]
+
+
+@app.route("/help")
+@login_required
+def help_center():
+    question = request.args.get("q", "").strip()[:300]
+    result = None
+    if question:
+        result = rag.answer_question(question)
+        db.session.add(HelpQuestion(user_id=current_user.id, question=question, mode=result.mode))
+        db.session.commit()
+    my_feedback = (
+        Feedback.query.filter_by(user_id=current_user.id)
+        .order_by(Feedback.created_at.desc())
+        .limit(5)
+        .all()
+    )
+    return render_template(
+        "help.html",
+        question=question,
+        result=result,
+        suggestions=SUGGESTED_QUESTIONS,
+        my_feedback=my_feedback,
+        llm_model=rag.OLLAMA_MODEL,
+    )
+
+
+@app.route("/feedback")
+@login_required
+def feedback_list():
+    items = (
+        Feedback.query.filter_by(user_id=current_user.id)
+        .order_by(Feedback.created_at.desc())
+        .all()
+    )
+    return render_template("feedback_list.html", items=items)
+
+
+@app.route("/feedback/new", methods=["GET", "POST"])
+@login_required
+def feedback_new():
+    values = {
+        "category": request.args.get("category", "question"),
+        "title": request.args.get("title", "")[:100],
+        "content": request.args.get("content", "")[:2000],
+    }
+    if request.method == "POST":
+        values = {k: request.form.get(k, "").strip() for k in ("category", "title", "content")}
+        error = None
+        if values["category"] not in FEEDBACK_CATEGORIES:
+            error = "請選擇問題類型。"
+        elif not values["title"] or not values["content"]:
+            error = "請填寫標題與內容。"
+        elif len(values["title"]) > 100 or len(values["content"]) > 2000:
+            error = "標題最多 100 字，內容最多 2000 字。"
+        if error:
+            flash(error, "error")
+        else:
+            db.session.add(Feedback(user_id=current_user.id, **values))
+            db.session.commit()
+            flash("已送出回報，管理員回覆後會顯示在「我的回報」。", "success")
+            return redirect(url_for("feedback_list"))
+    return render_template("feedback_form.html", values=values)
+
+
+# ---------------------------------------------------------------------------
+# 管理頁：整體使用統計（不顯示任何人的心情內容）與回報處理
+# ---------------------------------------------------------------------------
+
+
+def _admin_required():
+    if not is_admin(current_user):
+        abort(404)  # 不讓一般使用者知道有這個頁面
+
+
+@app.route("/admin")
+@login_required
+def admin():
+    _admin_required()
+    today = date.today()
+    week_ago = today - timedelta(days=6)
+    week_ago_dt = datetime.combine(week_ago, datetime.min.time())
+
+    total_users = User.query.count()
+    total_records = MoodRecord.query.count()
+    active_users = (
+        db.session.query(MoodRecord.user_id)
+        .filter(MoodRecord.created_at >= week_ago_dt)
+        .distinct()
+        .count()
+    )
+    stats = {
+        "total_users": total_users,
+        "new_users": User.query.filter(User.created_at >= week_ago_dt).count(),
+        "active_users": active_users,
+        "total_records": total_records,
+        "records_week": MoodRecord.query.filter(MoodRecord.created_at >= week_ago_dt).count(),
+        "avg_records": round(total_records / total_users, 1) if total_users else 0,
+        "questions": HelpQuestion.query.count(),
+        "open_feedback": Feedback.query.filter(Feedback.status != "resolved").count(),
+    }
+
+    # 最近 30 天每天新增的紀錄數（依建立時間）
+    start = today - timedelta(days=29)
+    counts = dict(
+        db.session.query(db.func.date(MoodRecord.created_at), db.func.count())
+        .filter(MoodRecord.created_at >= datetime.combine(start, datetime.min.time()))
+        .group_by(db.func.date(MoodRecord.created_at))
+        .all()
+    )
+    daily = [
+        {"label": f"{d.month}/{d.day}", "count": counts.get(d.isoformat(), 0)}
+        for d in (start + timedelta(days=i) for i in range(30))
+    ]
+
+    status_filter = request.args.get("status", "unresolved")
+    fq = Feedback.query
+    if status_filter == "unresolved":
+        fq = fq.filter(Feedback.status != "resolved")
+    elif status_filter in FEEDBACK_STATUS:
+        fq = fq.filter_by(status=status_filter)
+    feedback_items = fq.order_by(Feedback.created_at.desc()).limit(50).all()
+
+    # 說明文件找不到答案的提問：可以據此補充說明文件
+    unanswered = (
+        HelpQuestion.query.filter_by(mode="none")
+        .order_by(HelpQuestion.created_at.desc())
+        .limit(20)
+        .all()
+    )
+    return render_template(
+        "admin.html",
+        stats=stats,
+        daily=daily,
+        feedback_items=feedback_items,
+        status_filter=status_filter,
+        unanswered=unanswered,
+    )
+
+
+@app.post("/admin/feedback/<int:feedback_id>")
+@login_required
+def admin_feedback_update(feedback_id: int):
+    _admin_required()
+    item = db.get_or_404(Feedback, feedback_id)
+    status = request.form.get("status", item.status)
+    if status in FEEDBACK_STATUS:
+        item.status = status
+    reply = request.form.get("admin_reply", "").strip()[:2000]
+    item.admin_reply = reply or None
+    db.session.commit()
+    flash(f"已更新回報 #{item.id}。", "success")
+    return redirect(url_for("admin", status=request.args.get("status", "unresolved")))
 
 
 # ---------------------------------------------------------------------------
