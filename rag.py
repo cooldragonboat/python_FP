@@ -5,7 +5,7 @@
    用 BM25 演算法找出和問題最相關的幾段。中文沒有空格，所以用「相鄰兩個字」
    （bigram）當作詞，英文和數字則用整個單字。
 2. 增強（Augmented）：把找到的段落放進提示詞，要求模型只根據這些內容回答。
-3. 生成（Generation）：呼叫本機 Ollama 的模型（預設 gemma4）產生回答。
+3. 生成（Generation）：呼叫本機 Ollama 的模型（預設 gemma4:e2b）產生回答。
 
 連不到 Ollama 時（例如部署在雲端主機上），自動退回「只檢索」模式，
 直接顯示最相關的說明段落，功能不會中斷。
@@ -28,7 +28,7 @@ from pathlib import Path
 HELP_DIR = Path(__file__).resolve().parent / "docs" / "help"
 
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://localhost:11434").rstrip("/")
-OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "gemma4")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "gemma4:e2b")
 # 本機模型第一次載入可能要比較久
 OLLAMA_TIMEOUT = float(os.environ.get("OLLAMA_TIMEOUT", "120"))
 # 設成 0 可以完全關閉 AI 生成，只用檢索
