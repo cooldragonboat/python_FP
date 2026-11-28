@@ -73,8 +73,10 @@
         {% endif %}
 
         <div class="answer-foot">
-          <span>沒有解決你的問題？</span>
-          <a class="button ghost" href="{{ url_for('feedback_new', category='question', title=result.question[:100], content='我問了小幫手：「' ~ result.question ~ '」，但還是不清楚。') }}">回報給管理員 →</a>
+          <div class="report-box">
+            <span class="report-hint">沒有解決你的問題？</span>
+            <a class="button secondary" href="{{ url_for('feedback_new', category='question', title=result.question[:100], content='我問了小幫手：「' ~ result.question ~ '」，但還是不清楚。') }}">✉️ 回報給管理員</a>
+          </div>
         </div>
       </section>
     {% endif %}
