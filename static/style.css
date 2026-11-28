@@ -483,7 +483,8 @@ a.cal-cell.empty:hover .cal-add, a.cal-cell.empty:focus-visible .cal-add, a.cal-
 .badge { font-size: .78rem; padding: 3px 10px; border-radius: 999px; background: #f1f5f9; color: var(--text-secondary); white-space: nowrap; }
 .badge-ai { background: #ecfdf5; color: var(--success-ink); }
 .answer-q { color: var(--text-secondary); margin: 10px 0 6px; font-size: .92rem; }
-.answer-text { white-space: pre-wrap; line-height: 1.8; }
+.answer-text { line-height: 1.85; }
+.answer-text strong { color: var(--primary-ink); }
 .sources { margin-top: 16px; border-top: 1px solid var(--border-soft); padding-top: 10px; }
 .sources summary { cursor: pointer; color: var(--text-secondary); font-size: .88rem; }
 .source { margin-top: 10px; padding: 10px 12px; background: #fafaff; border-radius: var(--radius-sm); font-size: .88rem; }

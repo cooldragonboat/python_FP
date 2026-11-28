@@ -181,7 +181,8 @@ python_FP/
 2. 確認 Ollama 正在執行（安裝後通常會自動在背景執行）
 3. 照常 `python app.py`，到「說明」頁提問，回答旁邊出現「🤖 AI 整理（gemma4）」就成功了
 
-可用環境變數調整（PowerShell 寫法 `$env:名稱="值"`，要在 `python app.py` 之前執行）：
+可以在專案資料夾建立 `.env` 檔一次設定好（複製 `.env.example` 改名成 `.env`，`.env` 不會上傳到 GitHub），
+或用 PowerShell 在 `python app.py` 之前設定（`$env:名稱="值"`，只對那個視窗有效）：
 
 | 環境變數 | 預設值 | 用途 |
 | --- | --- | --- |

@@ -523,6 +523,51 @@ class RagTests(unittest.TestCase):
         self.assertIn("1925", a.answer)
 
 
+class SimpleMarkdownTests(unittest.TestCase):
+    """模型回答的 Markdown 轉換"""
+
+    def render(self, text):
+        from app import simple_md
+        return str(simple_md(text))
+
+    def test_bold_becomes_strong_without_asterisks(self):
+        html = self.render("1. **手動修改日期：** 在新增表單時修改")
+        self.assertIn("<strong>手動修改日期：</strong>", html)
+        self.assertNotIn("*", html)
+
+    def test_headings_bullets_and_stray_asterisks(self):
+        html = self.render("### 步驟\n* 第一步\n- 第二步\n多餘的 ** 符號")
+        self.assertIn("<strong>步驟</strong>", html)
+        self.assertIn("• 第一步", html)
+        self.assertIn("• 第二步", html)
+        self.assertNotIn("*", html)
+
+    def test_html_is_escaped(self):
+        html = self.render("<script>alert(1)</script> **粗體**")
+        self.assertNotIn("<script>", html)
+        self.assertIn("&lt;script&gt;", html)
+        self.assertIn("<strong>粗體</strong>", html)
+
+
+class EnvFileTests(unittest.TestCase):
+    """.env 設定檔"""
+
+    def test_env_file_sets_values_without_overriding(self):
+        import tempfile
+        from app import load_env_file
+        os.environ["MT_TEST_KEEP"] = "from-shell"
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / ".env"
+            path.write_text('# 註解\nMT_TEST_NEW="a@b.com"\nMT_TEST_KEEP=from-file\n\n', encoding="utf-8")
+            load_env_file(path)
+        try:
+            self.assertEqual(os.environ["MT_TEST_NEW"], "a@b.com")
+            self.assertEqual(os.environ["MT_TEST_KEEP"], "from-shell")
+        finally:
+            os.environ.pop("MT_TEST_NEW", None)
+            os.environ.pop("MT_TEST_KEEP", None)
+
+
 class HelpCenterTests(MoodTrackTestCase):
     """說明與回報頁面"""
 
