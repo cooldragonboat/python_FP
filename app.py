@@ -19,12 +19,33 @@ from flask_login import (
     logout_user,
 )
 from flask_sqlalchemy import SQLAlchemy
+from markupsafe import Markup, escape
 from flask_wtf.csrf import CSRFError, CSRFProtect
 from werkzeug.security import check_password_hash, generate_password_hash
 
-import rag
 
 BASE_DIR = Path(__file__).resolve().parent
+
+
+def load_env_file(path: Path) -> None:
+    """讀取專案資料夾的 .env（每行 KEY=VALUE），設定一次就不用每次開視窗重設。
+
+    已經在系統或視窗裡設定過的環境變數優先，不會被 .env 覆蓋。
+    .env 已列在 .gitignore，不會上傳到 GitHub。
+    """
+    if not path.is_file():
+        return
+    for line in path.read_text(encoding="utf-8-sig").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+load_env_file(BASE_DIR / ".env")
+
+import rag  # noqa: E402  要在讀完 .env 之後才載入，才拿得到 OLLAMA_MODEL 等設定
 
 app = Flask(__name__)
 
@@ -182,6 +203,38 @@ def is_admin(user) -> bool:
         if e.strip()
     }
     return bool(getattr(user, "is_authenticated", False)) and user.email.lower() in admins
+
+
+_BOLD = re.compile(r"\*\*(.+?)\*\*|__(.+?)__")
+
+
+@app.template_filter("simple_md")
+def simple_md(text: str) -> Markup:
+    """把模型回答裡常見的 Markdown 轉成安全的 HTML。
+
+    先跳脫所有 HTML（避免模型輸出被當成網頁程式碼執行），
+    再處理粗體、標題、項目符號；其他符號照原樣顯示。
+    """
+    lines = []
+    for raw in str(text).splitlines():
+        line = raw.rstrip()
+        stripped = line.lstrip()
+        # 標題「### 文字」→ 粗體一行
+        heading = re.match(r"#{1,6}\s+(.*)", stripped)
+        if heading:
+            line = f"**{heading.group(1).strip().strip('*')}**"
+        # 項目符號「* 文字」「- 文字」→「• 文字」
+        elif re.match(r"[*\-]\s+", stripped):
+            indent = line[: len(line) - len(stripped)]
+            line = indent + "• " + re.sub(r"^[*\-]\s+", "", stripped)
+        html = str(escape(line))
+        html = _BOLD.sub(lambda m: f"<strong>{m.group(1) or m.group(2)}</strong>", html)
+        # 沒有成對的 ** 就拿掉，不要顯示多餘的米字號
+        html = html.replace("**", "")
+        lines.append(html)
+    # 連續空行縮成一行
+    out = re.sub(r"(<br>\s*){3,}", "<br><br>", "<br>".join(lines))
+    return Markup(out.strip())
 
 
 @app.context_processor
