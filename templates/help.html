@@ -64,8 +64,12 @@
           </details>
         {% endif %}
 
-        {% if result.mode == 'retrieval' and result.error %}
-          <p class="hint">目前沒有連上 AI 模型，以上是說明文件中最相關的段落。</p>
+        {% if result.mode == 'retrieval' %}
+          <p class="hint">
+            {% if result.error %}目前沒有連上 AI 模型，以上是說明文件中最相關的段落。<br>
+              <span class="llm-error">原因：{{ result.error }}</span>
+            {% else %}AI 回答已關閉（RAG_USE_LLM=0），以上是說明文件中最相關的段落。{% endif %}
+          </p>
         {% endif %}
 
         <div class="answer-foot">

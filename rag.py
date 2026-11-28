@@ -223,9 +223,19 @@ def call_ollama(system: str, user: str) -> str:
             data = json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
         detail = e.read().decode("utf-8", "replace")[:200]
+        if e.code == 404:
+            raise LLMUnavailable(
+                f"Ollama 找不到模型「{OLLAMA_MODEL}」，請用 ollama list 確認名稱，"
+                f"並設定環境變數 OLLAMA_MODEL"
+            ) from e
         raise LLMUnavailable(f"Ollama 回傳錯誤 {e.code}：{detail}") from e
-    except (urllib.error.URLError, TimeoutError, OSError) as e:
-        raise LLMUnavailable(f"連不到 Ollama（{OLLAMA_HOST}）") from e
+    except TimeoutError as e:
+        raise LLMUnavailable(f"等 Ollama 回答超過 {OLLAMA_TIMEOUT:.0f} 秒，模型可能還在載入，請再試一次") from e
+    except (urllib.error.URLError, OSError) as e:
+        reason = getattr(e, "reason", e)
+        if isinstance(reason, TimeoutError) or "timed out" in str(reason):
+            raise LLMUnavailable(f"等 Ollama 回答超過 {OLLAMA_TIMEOUT:.0f} 秒，模型可能還在載入，請再試一次") from e
+        raise LLMUnavailable(f"連不到 Ollama（{OLLAMA_HOST}），請確認 Ollama 有在執行") from e
     except json.JSONDecodeError as e:
         raise LLMUnavailable("Ollama 回傳的格式無法解析") from e
 
