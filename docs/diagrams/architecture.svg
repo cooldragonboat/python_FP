@@ -30,6 +30,7 @@
       .lbl-bg { fill: #ffffff; }
       .num { fill: #6d28d9; }
       .num-t { font-size: 13px; font-weight: 700; fill: #ffffff; }
+      .ollama { fill: #ecfdf5; stroke: #a7f3d0; }
       .db { fill: #eff6ff; stroke: #bfdbfe; stroke-width: 1.5; }
     </style>
   </defs>
@@ -83,8 +84,8 @@
   <text x="414" y="248" class="b-t">紀錄 CRUD</text>
   <text x="490" y="248" class="code">/records  /records/new</text>
   <text x="490" y="266" class="code">/records/&lt;id&gt;/edit  /records/&lt;id&gt;/delete</text>
-  <text x="414" y="290" class="b-t">統計分析</text>
-  <text x="490" y="290" class="code">/dashboard  /analysis</text>
+  <text x="414" y="290" class="b-t">統計／說明</text>
+  <text x="490" y="290" class="code">/dashboard  /analysis  /help  /feedback  /admin</text>
   <text x="414" y="308" class="b-t">錯誤處理</text>
   <text x="490" y="308" class="code">404  500 → error.html</text>
 
@@ -97,9 +98,9 @@
 
   <!-- 運算層 -->
   <rect x="398" y="428" width="484" height="72" rx="10" class="layer"/>
-  <text x="414" y="450" class="layer-h">統計運算</text>
-  <text x="414" y="472" class="b-t">平均值（四捨五入）、最高最低、連續記錄天數、</text>
-  <text x="414" y="490" class="b-t">心情日曆、運動與壓力比較、相關係數</text>
+  <text x="414" y="450" class="layer-h">統計運算與說明小幫手</text>
+  <text x="414" y="472" class="b-t">平均值、最高最低、連續天數、心情日曆、相關係數</text>
+  <text x="414" y="490" class="b-t"><tspan class="code">rag.py</tspan>：BM25 檢索說明文件 ＋ 呼叫 Ollama 生成回答</text>
 
   <!-- 呈現層 -->
   <rect x="398" y="510" width="484" height="62" rx="10" class="layer"/>
@@ -109,37 +110,48 @@
   <!-- 資料存取層 -->
   <rect x="398" y="582" width="484" height="70" rx="10" class="layer"/>
   <text x="414" y="604" class="layer-h">資料存取：Flask-SQLAlchemy（ORM）</text>
-  <text x="414" y="626" class="b-t">模型：<tspan class="code">User</tspan>、<tspan class="code">MoodRecord</tspan></text>
+  <text x="414" y="626" class="b-t">模型：<tspan class="code">User</tspan>、<tspan class="code">MoodRecord</tspan>、<tspan class="code">Feedback</tspan>、<tspan class="code">HelpQuestion</tspan></text>
   <text x="414" y="644" class="b-t">每個查詢都加上 <tspan class="code">user_id = current_user.id</tspan>（資料隔離）</text>
 
-  <!-- ============ 資料儲存 ============ -->
+  <!-- ============ 資料儲存與外部服務 ============ -->
   <rect x="990" y="110" width="210" height="560" rx="14" class="zone"/>
-  <text x="1010" y="142" class="zone-h">資料儲存</text>
-  <text x="1010" y="162" class="zone-s">不上傳到 GitHub</text>
+  <text x="1010" y="142" class="zone-h">資料與外部服務</text>
+  <text x="1010" y="162" class="zone-s">.env 與資料庫不上傳 GitHub</text>
+
+  <rect x="1008" y="176" width="174" height="74" rx="10" class="box"/>
+  <text x="1024" y="200" class="b-h">靜態檔案 static/</text>
+  <text x="1024" y="220" class="code">style.css  logo.svg</text>
+  <text x="1024" y="238" class="code">vendor/（Chart.js）</text>
+
+  <rect x="1008" y="258" width="174" height="74" rx="10" class="box"/>
+  <text x="1024" y="282" class="b-h">設定 .env／環境變數</text>
+  <text x="1024" y="302" class="code">SECRET_KEY</text>
+  <text x="1024" y="320" class="code">ADMIN_EMAILS 等</text>
+
+  <rect x="1008" y="340" width="174" height="56" rx="10" class="box"/>
+  <text x="1024" y="364" class="b-h">知識庫 docs/help/</text>
+  <text x="1024" y="384" class="b-t">說明文件 4 份、36 段</text>
+
+  <rect x="1008" y="404" width="174" height="74" rx="10" class="box ollama"/>
+  <text x="1024" y="428" class="b-h">Ollama（本機）</text>
+  <text x="1024" y="448" class="code">gemma4:e2b</text>
+  <text x="1024" y="466" class="b-t">連不到時改用檢索</text>
 
   <!-- SQLite cylinder -->
-  <g transform="translate(1010,470)">
-    <path d="M0,18 v118 a85,18 0 0 0 170,0 v-118" class="db"/>
+  <g transform="translate(1010,488)">
+    <path d="M0,18 v138 a85,18 0 0 0 170,0 v-138" class="db"/>
     <ellipse cx="85" cy="18" rx="85" ry="18" class="db"/>
-    <text x="85" y="62" text-anchor="middle" class="b-h">SQLite</text>
-    <text x="85" y="84" text-anchor="middle" class="code">moodtrack.db</text>
-    <text x="85" y="110" text-anchor="middle" class="code">users</text>
-    <text x="85" y="130" text-anchor="middle" class="code">mood_records</text>
+    <text x="85" y="56" text-anchor="middle" class="b-h">SQLite</text>
+    <text x="85" y="75" text-anchor="middle" class="code">moodtrack.db</text>
+    <text x="85" y="98" text-anchor="middle" class="code">users</text>
+    <text x="85" y="115" text-anchor="middle" class="code">mood_records</text>
+    <text x="85" y="132" text-anchor="middle" class="code">feedback</text>
+    <text x="85" y="149" text-anchor="middle" class="code">help_questions</text>
   </g>
 
-  <rect x="1008" y="182" width="174" height="140" rx="10" class="box"/>
-  <text x="1024" y="208" class="b-h">靜態檔案 static/</text>
-  <text x="1024" y="232" class="code">style.css</text>
-  <text x="1024" y="252" class="code">logo.svg</text>
-  <text x="1024" y="272" class="code">vendor/</text>
-  <text x="1024" y="290" class="code"> chart.umd.min.js</text>
-  <text x="1024" y="312" class="b-t">由 Flask 提供給瀏覽器</text>
-
-  <rect x="1008" y="340" width="174" height="96" rx="10" class="box"/>
-  <text x="1024" y="366" class="b-h">設定</text>
-  <text x="1024" y="390" class="code">SECRET_KEY</text>
-  <text x="1024" y="410" class="code">DATABASE_URL</text>
-  <text x="1024" y="428" class="b-t">可由環境變數覆蓋</text>
+  <!-- 小幫手 → Ollama -->
+  <path d="M882,476 C930,476 950,441 1008,441" class="flow" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
+  <text x="940" y="500" text-anchor="middle" class="zone-s">/api/chat</text>
 
   <!-- ============ 箭頭 ============ -->
   <!-- ① 請求 -->
