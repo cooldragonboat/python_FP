@@ -32,7 +32,7 @@ https://smallfire.pythonanywhere.com/
 
 ## 專題報告
 
-[`docs/report/MoodTrack_期末專題報告.docx`](docs/report/MoodTrack_期末專題報告.docx)：共 15 章，含系統架構圖、流程圖、ER 圖、網站截圖與測試結果。
+[`docs/report/MoodTrack_期末專題報告.docx`](docs/report/MoodTrack_期末專題報告.docx)：共 16 章，含系統架構圖、流程圖、ER 圖、RAG 流程圖、網站截圖與測試結果。
 
 ## 系統架構
 
@@ -137,7 +137,7 @@ python_FP/
 ├── README.md            # 專案說明
 ├── TESTING.md           # 測試紀錄
 ├── DEPLOY.md            # PythonAnywhere 部署教學
-├── docs/diagrams/       # 系統架構圖、系統流程圖、ER 圖（PNG + SVG）
+├── docs/diagrams/       # 系統架構圖、系統流程圖、ER 圖、RAG 流程圖（PNG + SVG）
 ├── docs/report/         # 期末專題報告（Word）
 ├── docs/help/           # 說明小幫手的知識庫（Markdown）
 ├── tests/
@@ -164,6 +164,8 @@ python_FP/
 ```
 
 ## 說明小幫手（RAG）
+
+![說明小幫手 RAG 運作流程](docs/diagrams/rag-flow.png)
 
 ```
 問題 → 檢索：BM25 從 docs/help/*.md 找出最相關的段落
