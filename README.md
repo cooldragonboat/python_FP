@@ -27,7 +27,7 @@ https://smallfire.pythonanywhere.com/
 | 使用者認證 | Flask-Login、Werkzeug 密碼雜湊（scrypt）、Flask-WTF（CSRF 保護） |
 | 前端 | Jinja2 模板、HTML、CSS（自訂樣式，含手機版排版） |
 | 資料視覺化 | Chart.js 4.4.1（放在本機 `static/vendor/`） |
-| 說明小幫手 | 自製 BM25 檢索（中文 bigram）＋ 本機 Ollama（預設 gemma4），不需額外套件 |
+| 說明小幫手 | 自製 BM25 檢索（中文 bigram）＋ 本機 Ollama（預設 gemma4:e2b），不需額外套件 |
 | 測試 | Python 內建 `unittest` |
 
 ## 專題報告
@@ -177,7 +177,7 @@ python_FP/
 
 ### 在自己電腦上啟用 AI 回答
 
-1. 安裝 [Ollama](https://ollama.com/download)，下載模型：`ollama pull gemma4`
+1. 安裝 [Ollama](https://ollama.com/download)，下載模型：`ollama pull gemma4:e2b`
 2. 確認 Ollama 正在執行（安裝後通常會自動在背景執行）
 3. 照常 `python app.py`，到「說明」頁提問，回答旁邊出現「🤖 AI 整理（gemma4）」就成功了
 
@@ -185,7 +185,7 @@ python_FP/
 
 | 環境變數 | 預設值 | 用途 |
 | --- | --- | --- |
-| `OLLAMA_MODEL` | `gemma4` | 模型名稱，要和 `ollama list` 顯示的一樣，例如 `gemma4:e4b` |
+| `OLLAMA_MODEL` | `gemma4:e2b` | 模型名稱，要和 `ollama list` 顯示的 NAME 一模一樣 |
 | `OLLAMA_HOST` | `http://localhost:11434` | Ollama 的位址 |
 | `RAG_USE_LLM` | `1` | 設成 `0` 只用檢索，不呼叫模型 |
 | `ADMIN_EMAILS` | （空） | 管理員的電子郵件，多個用逗號分隔，例如 `$env:ADMIN_EMAILS="me@example.com"` |
